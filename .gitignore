@@ -1,0 +1,12 @@
+*.exe
+*.o
+*.a
+*.so
+*.dll
+
+.vscode/
+.vs/
+*.user
+
+compile.bat
+raylib/

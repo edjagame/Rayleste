@@ -26,6 +26,7 @@
 #include "Grid.hpp"
 
 #define DASH_DURATION 0.2f
+#define DASH_COOLDOWN 0.3f
 
 class Player;
 
@@ -84,6 +85,7 @@ public:
     bool is_facing_right = true;
     float dash_time = 0.0f;
     float dash_duration = DASH_DURATION;
+    float dash_cooldown_timer = 0.0f;
     bool has_dashed = false;
     Vector2 dash_direction = {0.0f, 0.0f};
 

@@ -18,14 +18,26 @@
 #include <iostream>
 #include "Player.hpp"
 
-#define GRAVITY 1500.0f
-#define JUMP_MULTIPLIER 2.0f
+#define GRAVITY 2000.0f
+#define JUMP_MULTIPLIER 2.5f
 
 /**************************************************
  *            GLOBAL PLAYER FUNCTIONS             *
  **************************************************/
 void Player::Update(float delta_time) {
+    if (dash_cooldown_timer > 0.0f) {
+        dash_cooldown_timer -= delta_time;
+    }
+    
+    Vector2 old_position = position;
+    
     position = Vector2Add(position, Vector2Scale(velocity, delta_time));
+    
+    if (IsHittingWall()) {
+        position.x = old_position.x;
+        velocity.x = 0.0f;
+    }
+    
     current_state->Update(delta_time);
 }
 
@@ -98,6 +110,11 @@ void PlayerDashing::Enter() {
     if (up_key_pressed) dash_direction.y -= 1.0f;
     if (down_key_pressed) dash_direction.y += 1.0f;
     
+    // prevent dashing into the ground
+    if (player->IsHittingFloor() && dash_direction.y > 0.0f) {
+        dash_direction.y = 0.0f;
+    }
+    
     // Use facing direction as default if no direction input
     if (dash_direction.x == 0.0f && dash_direction.y == 0.0f) {
         dash_direction.x = player->is_facing_right ? 1.0f : -1.0f;
@@ -136,7 +153,7 @@ void PlayerGrounded::Update(float delta_time) {
         player->SetState(&player->airborne);
     }
 
-    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed) {
+    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
     }
     
@@ -156,7 +173,7 @@ void PlayerAirborne::Update(float delta_time) {
         player->velocity.x = 0.0f;
     }
     
-     if (IsKeyDown(player->DASH_KEY) && !player->has_dashed) {
+    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
         player->has_dashed = true;
     }
@@ -182,10 +199,18 @@ void PlayerDashing::Update(float delta_time) {
     
     Vector2 dash_movement = Vector2Scale(player->dash_direction, DASH_SPEED * delta_time);
     player->position = Vector2Add(player->position, dash_movement);
-    player->velocity = {0.0f, 0.0f}; 
+    player->velocity = {0.0f, 0.0f};
+    
+    if (player->IsHittingCeiling() || player->IsHittingWall()) {
+        player->dash_cooldown_timer = DASH_COOLDOWN;
+        player->SetState(&player->airborne);
+        return;
+    }
     
     if (player->dash_time >= player->dash_duration) {
+        player->dash_cooldown_timer = DASH_COOLDOWN;
         if (player->IsHittingFloor()) {
+            player->has_dashed = false;
             player->SetState(&player->grounded);
         } else {
             player->SetState(&player->airborne);

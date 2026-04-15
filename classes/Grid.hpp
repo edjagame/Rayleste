@@ -4,13 +4,17 @@
 
 #include <vector>
 
+enum TileType {
+    FLOOR = 0,
+    SOLID = 1,
+    SPIKE = 2,
+};
 
 struct Tile {
     int id;
     Vector2 position;
-    bool isSolid;
+    TileType type;
     Vector2 size;
-    
 };
 
 class Grid {
@@ -38,5 +42,5 @@ public:
 
     void InitTileSize();
     void DrawGrid();
-    bool IsSolidTile(Vector2 position);
+    TileType GetTileType(Vector2 position);
 };

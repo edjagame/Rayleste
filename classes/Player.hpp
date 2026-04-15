@@ -27,6 +27,7 @@
 
 #define DASH_DURATION 0.2f
 #define DASH_COOLDOWN 0.3f
+#define RESPAWN_TIME 1.0f
 
 class Player;
 
@@ -61,6 +62,13 @@ public:
     void Exit();
 };
 
+class PlayerDead : public PlayerState {
+public:
+    void Enter();
+    void Update(float delta_time);
+    void Exit();
+};
+
 
 class Player {
     PlayerState* current_state = nullptr;
@@ -89,11 +97,16 @@ public:
     bool has_dashed = false;
     Vector2 dash_direction = {0.0f, 0.0f};
 
+    // Respawn variables
+    Vector2 current_respawn_point = {0.0f, 0.0f};
+    float respawn_timer = 0.0f;
+    float respawn_time = RESPAWN_TIME;
+
     // Player states
     PlayerGrounded grounded;
     PlayerAirborne airborne;
     PlayerDashing dashing;
-
+    PlayerDead dead;
     // Keybinds
     KeyboardKey JUMP_KEY = KEY_SPACE;
     KeyboardKey DASH_KEY = KEY_ENTER;
@@ -117,10 +130,13 @@ public:
 
     void SetGrid(Grid* grid) { this->grid = grid; }
     Grid* GetGrid() { return grid; }
+    
 
-    bool IsHittingFloor();
-    bool IsHittingCeiling();
-    bool IsHittingWall();
+    // Collision checks
+    TileType FloorType();
+    TileType CeilingType();
+    TileType LeftWallType();
+    TileType RightWallType();
 };
 
 #endif

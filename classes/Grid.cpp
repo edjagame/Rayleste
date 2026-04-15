@@ -22,22 +22,23 @@ void Grid::DrawGrid() {
     }
 }
 
-bool Grid::IsSolidTile(Vector2 position) {
+TileType Grid::GetTileType(Vector2 position) {
     // convert to grid coords
     int col = position.x / tile_size_grid.x;
     int row = position.y / tile_size_grid.y;
 
 
-    // check bounds
+    // treat out of bounds as solid (can be anything)
     if (col < 0 || col >= coords.x || row < 0 || row >= coords.y) {
-        return false; 
+        return TileType::SOLID; 
     }
     
+
     int tileId = grid_data[row * coords.x + col];
     for (const Tile& tile : tiles) {
         if (tile.id == tileId) {
-            return tile.isSolid;
+            return tile.type;
         }
     }
-    return false; // Default to non-solid if tile ID not found
+    return TileType::FLOOR; // default to empty (but shuoldnt happen ideally)
 }

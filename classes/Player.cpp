@@ -21,6 +21,10 @@
 #define GRAVITY 2000.0f
 #define JUMP_MULTIPLIER 2.5f
 
+const Color PLAYER_COLOR = {200, 0, 0, 255};
+const Color DASHLESS_COLOR = {0, 200, 200, 255};
+const Color DEAD_COLOR = {0, 0, 0, 255};
+
 /**************************************************
  *            GLOBAL PLAYER FUNCTIONS             *
  **************************************************/
@@ -33,9 +37,16 @@ void Player::Update(float delta_time) {
     
     position = Vector2Add(position, Vector2Scale(velocity, delta_time));
     
-    if (IsHittingWall()) {
+    if (LeftWallType() == TileType::SOLID || RightWallType() == TileType::SOLID) {
         position.x = old_position.x;
         velocity.x = 0.0f;
+    }
+
+    if (current_state != &dead && (FloorType() == TileType::SPIKE ||
+        CeilingType() == TileType::SPIKE || 
+        LeftWallType() == TileType::SPIKE || 
+        RightWallType() == TileType::SPIKE)) {
+        SetState(&dead);
     }
     
     current_state->Update(delta_time);
@@ -52,11 +63,14 @@ Player::Player(Vector2 pos, float w, float h, float spd, float m) {
     speed = spd;
     mass = (m <= 0) ? 1.0f : m; // safety vs zero/negative mass
     inverse_mass = 1.0f / mass;
-    color = WHITE;
+    color = PLAYER_COLOR;
+
+    current_respawn_point = pos;
 
     grounded.player = &*this;
     airborne.player = &*this;
     dashing.player = &*this;
+    dead.player = &*this;
 
     SetState(&grounded);
 }
@@ -88,6 +102,7 @@ void Player::LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey up,
  *              ENTER STATE FUNCTIONS             *
  **************************************************/
 void PlayerGrounded::Enter() {
+    player->color = PLAYER_COLOR;
 }
 
 void PlayerAirborne::Enter() {
@@ -111,7 +126,7 @@ void PlayerDashing::Enter() {
     if (down_key_pressed) dash_direction.y += 1.0f;
     
     // prevent dashing into the ground
-    if (player->IsHittingFloor() && dash_direction.y > 0.0f) {
+    if (player->FloorType() == TileType::SOLID && dash_direction.y > 0.0f) {
         dash_direction.y = 0.0f;
     }
     
@@ -122,6 +137,12 @@ void PlayerDashing::Enter() {
     
     // Normalize and store
     player->dash_direction = Vector2Normalize(dash_direction);
+    player->color = DASHLESS_COLOR;
+}
+
+void PlayerDead::Enter() {
+    player->respawn_timer = 0.0f;
+    player->color = DEAD_COLOR;
 }
 
 /**************************************************
@@ -132,6 +153,8 @@ void PlayerGrounded::Exit() {}
 void PlayerAirborne::Exit() {}
 
 void PlayerDashing::Exit() {}
+
+void PlayerDead::Exit() {}
 
 /**************************************************
  *             UPDATE STATE FUNCTIONS             *
@@ -157,7 +180,7 @@ void PlayerGrounded::Update(float delta_time) {
         player->SetState(&player->dashing);
     }
     
-    if(!player->IsHittingFloor()) {
+    if(player->FloorType() != TileType::SOLID) {
         player->SetState(&player->airborne);
     }
 }
@@ -182,7 +205,7 @@ void PlayerAirborne::Update(float delta_time) {
     player->velocity.y += player->acceleration.y * delta_time;
 
     // snap to tile and switch back to grounded on touching a solid tile
-    if (player->IsHittingFloor()) {
+    if (player->FloorType() == TileType::SOLID) {
         player->velocity.y = 0.0f;
         float tile_h = player->GetGrid()->tile_size_grid.y;
         int row = (int)((player->position.y + player->height) / tile_h);
@@ -197,11 +220,18 @@ void PlayerDashing::Update(float delta_time) {
     const float DASH_SPEED = player->speed * 4.0f; 
     player->dash_time += delta_time;
     
+    Vector2 old_position = player->position;
     Vector2 dash_movement = Vector2Scale(player->dash_direction, DASH_SPEED * delta_time);
     player->position = Vector2Add(player->position, dash_movement);
     player->velocity = {0.0f, 0.0f};
     
-    if (player->IsHittingCeiling() || player->IsHittingWall()) {
+    // Collision check during dashing
+    bool hit_ceiling = player->CeilingType() == TileType::SOLID;
+    bool hit_wall = player->LeftWallType() == TileType::SOLID || player->RightWallType() == TileType::SOLID;
+    bool hit_floor = player->dash_direction.y > 0.0f && player->FloorType() == TileType::SOLID;
+    
+    if (hit_ceiling || hit_wall || hit_floor) {
+        player->position = old_position;
         player->dash_cooldown_timer = DASH_COOLDOWN;
         player->SetState(&player->airborne);
         return;
@@ -209,7 +239,7 @@ void PlayerDashing::Update(float delta_time) {
     
     if (player->dash_time >= player->dash_duration) {
         player->dash_cooldown_timer = DASH_COOLDOWN;
-        if (player->IsHittingFloor()) {
+        if (player->FloorType() == TileType::SOLID) {
             player->has_dashed = false;
             player->SetState(&player->grounded);
         } else {
@@ -218,24 +248,36 @@ void PlayerDashing::Update(float delta_time) {
     }
 }
 
+void PlayerDead::Update(float delta_time) {
+    player->respawn_timer += delta_time;
+    if (player->respawn_timer >= player->respawn_time) { 
+        player->position = player->current_respawn_point;
+        player->velocity = {0.0f, 0.0f};
+        player->SetState(&player->airborne);
+    }
+}
+
 
 /**************************************************
  *             OTHER PLAYER FUNCTIONS             *
  **************************************************/
 
-
-bool Player::IsHittingFloor() {
+TileType Player::FloorType() {
     Vector2 feet_position = { position.x + width / 2.0f, position.y + height };
-    return GetGrid()->IsSolidTile(feet_position);
+    return GetGrid()->GetTileType(feet_position);
 }
 
-bool Player::IsHittingCeiling() {
+TileType Player::CeilingType() {
     Vector2 head_position = { position.x + width / 2.0f, position.y };
-    return GetGrid()->IsSolidTile(head_position);
+    return GetGrid()->GetTileType(head_position);
 }
 
-bool Player::IsHittingWall() {
-    Vector2 right_position = { position.x + width, position.y + height / 2.0f };
-    Vector2 left_position = { position.x, position.y + height / 2.0f };
-    return GetGrid()->IsSolidTile(right_position) || GetGrid()->IsSolidTile(left_position);
+TileType Player::LeftWallType() {
+    Vector2 left_position = { position.x + 1, position.y + height / 2.0f };
+    return GetGrid()->GetTileType(left_position);
+}
+
+TileType Player::RightWallType() {
+    Vector2 right_position = { position.x + width - 1, position.y + height / 2.0f };
+    return GetGrid()->GetTileType(right_position);
 }

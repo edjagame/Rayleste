@@ -71,8 +71,8 @@ Settings LoadSettings(const std::string& filepath) {
         const json& tile = *it;
         int id = tile["id"].get<int>();
         Vector2 pos = LoadVector2(tile["pos"]);
-        bool isSolid = tile["isSolid"].get<bool>();
-        settings.tilemap.tiles.push_back({id, pos, isSolid});
+        TileType type = (TileType)tile["type"].get<int>();
+        settings.tilemap.tiles.push_back({id, pos, type});
     }
 
     // Load grid data

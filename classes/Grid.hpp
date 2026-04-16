@@ -17,30 +17,36 @@ struct Tile {
     Vector2 size;
 };
 
+struct Screen {
+    Vector2 world_position;
+    Vector2 dimensions_tiles;
+    std::vector<int> tile_data;
+};
+
 class Grid {
 public:
     std::vector<Tile> tiles;
-    Vector2 coords;       // number of columns (x) and rows (y)
+    std::vector<Screen> screens;
     Vector2 tile_size_grid;   // rendered size of each tile in pixels
     Vector2 tile_size_spritesheet; // pixel size of each tile in the spritesheet
-    std::vector<int> grid_data;
     Texture2D tilemap;
     Vector2 tilemap_coords;
 
     Grid() {}
-    Grid(   Texture2D tilemap, std::vector<Tile> tiles, Vector2 tile_size_spritesheet, 
-            Vector2 tile_size_grid, Vector2 coords, std::vector<int> grid_data) {
-        this->coords = coords;
+    Grid(   Texture2D tilemap, std::vector<Tile> tiles, Vector2 tile_size_spritesheet,
+            Vector2 tile_size_grid, const std::vector<Screen>& screens) {
         this->tile_size_grid = tile_size_grid;
-        this->grid_data = grid_data;
         this->tilemap = tilemap;
         this->tiles = tiles;
         this->tile_size_spritesheet = tile_size_spritesheet;
-        
+        this->screens = screens;
+
         InitTileSize();
     }
 
     void InitTileSize();
     void DrawGrid();
     TileType GetTileType(Vector2 position);
+    int GetScreenIndex(Vector2 position) const;
+    Vector2 GetScreenCenter(int screen_index) const;
 };

@@ -70,6 +70,7 @@ Player::Player(Vector2 pos, float w, float h, float spd, float m) {
     grounded.player = &*this;
     airborne.player = &*this;
     dashing.player = &*this;
+    wall_climbing.player = &*this;
     dead.player = &*this;
 
     SetState(&grounded);
@@ -88,10 +89,11 @@ PlayerState* Player::GetCurrentState() {
     return current_state;
 }
 
-void Player::LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey up, 
+void Player::LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey grab, KeyboardKey up, 
                           KeyboardKey down, KeyboardKey left, KeyboardKey right) {
     JUMP_KEY = jump;
     DASH_KEY = dash;
+    GRAB_KEY = grab;
     UP_KEY = up;
     DOWN_KEY = down;
     LEFT_KEY = left;
@@ -140,6 +142,13 @@ void PlayerDashing::Enter() {
     player->color = DASHLESS_COLOR;
 }
 
+void PlayerWallClimbing::Enter() {
+    if (player->velocity.y > WALL_SLIDE_SPEED) {
+        player->velocity.y = WALL_SLIDE_SPEED;
+    }
+    player->velocity.x = 0.0f;
+}
+
 void PlayerDead::Enter() {
     player->respawn_timer = 0.0f;
     player->color = DEAD_COLOR;
@@ -153,6 +162,8 @@ void PlayerGrounded::Exit() {}
 void PlayerAirborne::Exit() {}
 
 void PlayerDashing::Exit() {}
+
+void PlayerWallClimbing::Exit() {}
 
 void PlayerDead::Exit() {}
 
@@ -176,6 +187,12 @@ void PlayerGrounded::Update(float delta_time) {
         player->SetState(&player->airborne);
     }
 
+    bool on_wall = player->IsAdjacentToLeftWall() || player->IsAdjacentToRightWall();
+    if (IsKeyDown(player->GRAB_KEY) && on_wall) {
+        player->SetState(&player->wall_climbing);
+        return;
+    }
+
     if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
     }
@@ -183,6 +200,8 @@ void PlayerGrounded::Update(float delta_time) {
     if(player->FloorType() != TileType::SOLID) {
         player->SetState(&player->airborne);
     }
+
+    
 }
 
 void PlayerAirborne::Update(float delta_time) {
@@ -199,6 +218,15 @@ void PlayerAirborne::Update(float delta_time) {
     if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
         player->has_dashed = true;
+    }
+
+    bool on_left_wall = player->IsAdjacentToLeftWall();
+    bool on_right_wall = player->IsAdjacentToRightWall();
+    bool on_wall = on_left_wall || on_right_wall;
+
+    if (player->FloorType() != TileType::SOLID && on_wall && IsKeyDown(player->GRAB_KEY)) {
+        player->SetState(&player->wall_climbing);
+        return;
     }
     
     player->acceleration.y = GRAVITY;
@@ -248,6 +276,59 @@ void PlayerDashing::Update(float delta_time) {
     }
 }
 
+void PlayerWallClimbing::Update(float delta_time) {
+    bool on_left_wall = player->IsAdjacentToLeftWall();
+    bool on_right_wall = player->IsAdjacentToRightWall();
+    bool on_wall = on_left_wall || on_right_wall;
+
+    if (player->FloorType() == TileType::SOLID && !IsKeyDown(player->UP_KEY)) {
+        player->velocity.y = 0.0f;
+        player->SetState(&player->grounded);
+        player->has_dashed = false;
+        return;
+    }
+
+    if (!on_wall || !IsKeyDown(player->GRAB_KEY)) {
+        player->SetState(&player->airborne);
+        return;
+    }
+
+    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
+        player->SetState(&player->dashing);
+        player->has_dashed = true;
+        return;
+    }
+
+    if (IsKeyDown(player->JUMP_KEY)) {
+        float wall_jump_x = player->speed * WALL_JUMP_HORIZONTAL_MULTIPLIER;
+        if (on_left_wall) {
+            player->velocity.x = wall_jump_x;
+            player->is_facing_right = true;
+        } else {
+            player->velocity.x = -wall_jump_x;
+            player->is_facing_right = false;
+        }
+
+        player->velocity.y = -player->speed * JUMP_MULTIPLIER;
+        player->SetState(&player->airborne);
+        return;
+    }
+
+    player->velocity.x = 0.0f;
+
+    if (IsKeyDown(player->UP_KEY)) {
+        player->velocity.y = -WALL_CLIMB_SPEED;
+    } else if (IsKeyDown(player->DOWN_KEY)) {
+        player->velocity.y = WALL_CLIMB_SPEED;
+    } else {
+        player->velocity.y = WALL_SLIDE_SPEED;
+    }
+
+    if (player->CeilingType() == TileType::SOLID && player->velocity.y < 0.0f) {
+        player->velocity.y = 0.0f;
+    }
+}
+
 void PlayerDead::Update(float delta_time) {
     player->respawn_timer += delta_time;
     if (player->respawn_timer >= player->respawn_time) { 
@@ -280,4 +361,14 @@ TileType Player::LeftWallType() {
 TileType Player::RightWallType() {
     Vector2 right_position = { position.x + width - 1, position.y + height / 2.0f };
     return GetGrid()->GetTileType(right_position);
+}
+
+bool Player::IsAdjacentToLeftWall() {
+    Vector2 left_position = { position.x - 1, position.y + height / 2.0f };
+    return GetGrid()->GetTileType(left_position) == TileType::SOLID;
+}
+
+bool Player::IsAdjacentToRightWall() {
+    Vector2 right_position = { position.x + width + 1, position.y + height / 2.0f };
+    return GetGrid()->GetTileType(right_position) == TileType::SOLID;
 }

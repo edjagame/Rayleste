@@ -33,14 +33,13 @@ int main() {
                         settings.tilemap.tiles, 
                         settings.tilemap.tile_size_sprite_sheet, 
                         settings.tilemap.tile_size_grid, 
-                        settings.tilemap.grid_coords, 
-                        settings.tilemap.grid_data);
+                        settings.tilemap.screens);
 
 
     // Init Player
     Player player = Player(center, 50.0f, 50.0f, 300.0f, 1.0f);
     player.SetState(&player.airborne);
-    player.LoadKeybinds(settings.keybinds.jump, settings.keybinds.dash, 
+    player.LoadKeybinds(settings.keybinds.jump, settings.keybinds.dash, settings.keybinds.grab,
                         settings.keybinds.up, settings.keybinds.down,
                         settings.keybinds.left, settings.keybinds.right);
 
@@ -59,12 +58,32 @@ int main() {
     //Set references
     player.SetGrid(&grid);
 
+    Vector2 player_center = {
+        player.position.x + player.width / 2.0f,
+        player.position.y + player.height / 2.0f
+    };
+
+    // Set initial camera position to the screen the player starts on
+    int current_screen_index = grid.GetScreenIndex(player_center);
+    if (current_screen_index >= 0) {
+        camera_view.target = grid.GetScreenCenter(current_screen_index);
+    }
+
     while(!WindowShouldClose()){
         float deltaTime = GetFrameTime();
         // ========== UPDATE ==========
 
         player.Update(deltaTime);
-        camera_view.target = player.position;
+
+        player_center = {
+            player.position.x + player.width / 2.0f,
+            player.position.y + player.height / 2.0f
+        };
+        int new_screen_index = grid.GetScreenIndex(player_center);
+        if (new_screen_index >= 0 && new_screen_index != current_screen_index) {
+            current_screen_index = new_screen_index;
+            camera_view.target = grid.GetScreenCenter(current_screen_index);
+        }
 
         // ========== DRAW ==========
         Rectangle bg_source = { camera_view.target.x - WINDOW_WIDTH/2.0f, camera_view.target.y - WINDOW_HEIGHT/2.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT };

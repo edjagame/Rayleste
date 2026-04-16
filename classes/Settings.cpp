@@ -15,6 +15,44 @@ Vector2 LoadVector2(const json& j) {
     return vec;
 }
 
+Screen LoadScreen(const json& j) {
+    Screen screen;
+
+    screen.world_position = LoadVector2(j["world_position"]);
+    screen.dimensions_tiles = LoadVector2(j["dimensions_tiles"]);
+    screen.tile_data = j["tile_data"].get<std::vector<int>>();
+
+    return screen;
+}
+
+bool LoadTilemapSettings(const json& json_tilemap, TilemapSettings& tilemap_settings) {
+    // Load tilemap metadata
+    tilemap_settings.image_filename = json_tilemap["image_filename"].get<std::string>();
+    tilemap_settings.tile_size_sprite_sheet = LoadVector2(json_tilemap["tile_size_sprite_sheet"]);
+    tilemap_settings.tile_size_grid = LoadVector2(json_tilemap["tile_size_grid"]);
+
+    // Load tile definitions
+    const json& tiles = json_tilemap["tiles"];
+    for (json::const_iterator it = tiles.begin(); it != tiles.end(); ++it) {
+        const json& tile = *it;
+        const int id = tile["id"].get<int>();
+        const Vector2 pos = LoadVector2(tile["pos"]);
+        const TileType type = static_cast<TileType>(tile["type"].get<int>());
+        tilemap_settings.tiles.push_back({id, pos, type});
+    }
+
+    if (!json_tilemap.contains("screens")) {
+        std::cerr << "Missing screens in settings.ini" << std::endl;
+        return false;
+    }
+
+    for (const json& json_screen : json_tilemap["screens"]) {
+        tilemap_settings.screens.push_back(LoadScreen(json_screen));
+    }
+
+    return true;
+}
+
 Color LoadColor(const json& j) {
     Color color;
     color.r = j["r"].get<unsigned char>();
@@ -24,6 +62,7 @@ Color LoadColor(const json& j) {
     return color;
 }
 
+// kinda brute force helper function
 KeyboardKey StringToKeyboardKey(const std::string& keyName) {
     static const std::map<std::string, KeyboardKey> keyMap = {
         {"KEY_SPACE", KEY_SPACE},
@@ -39,6 +78,8 @@ KeyboardKey StringToKeyboardKey(const std::string& keyName) {
         {"KEY_U", KEY_U}, {"KEY_V", KEY_V}, {"KEY_W", KEY_W}, {"KEY_X", KEY_X}, {"KEY_Y", KEY_Y},
         {"KEY_Z", KEY_Z},
         {"KEY_SHIFT", KEY_LEFT_SHIFT},
+        {"KEY_LEFT_SHIFT", KEY_LEFT_SHIFT},
+        {"KEY_RIGHT_SHIFT", KEY_RIGHT_SHIFT},
         {"KEY_CTRL", KEY_LEFT_CONTROL},
     };
 
@@ -59,31 +100,22 @@ Settings LoadSettings(const std::string& filepath) {
 
     // Parse the JSON
     json json_root = json::parse(file);
-    json json_tilemap = json_root["tilemap"];
-
-    // Load tile data
-    settings.tilemap.image_filename = json_tilemap["image_filename"].get<std::string>();
-    settings.tilemap.tile_size_sprite_sheet = LoadVector2(json_tilemap["tile_size_sprite_sheet"]);
-    settings.tilemap.tile_size_grid = LoadVector2(json_tilemap["tile_size_grid"]);
-    
-    json tiles = json_tilemap["tiles"];
-    for (json::iterator it = tiles.begin(); it != tiles.end(); ++it) {
-        const json& tile = *it;
-        int id = tile["id"].get<int>();
-        Vector2 pos = LoadVector2(tile["pos"]);
-        TileType type = (TileType)tile["type"].get<int>();
-        settings.tilemap.tiles.push_back({id, pos, type});
+    if (!json_root.contains("tilemap")) {
+        std::cerr << "Missing tilemap in settings file: " << filepath << std::endl;
+        return settings;
     }
 
-    // Load grid data
-    settings.tilemap.grid_coords = LoadVector2(json_tilemap["grid_coords"]);
-    settings.tilemap.grid_data = json_tilemap["grid_data"].get<std::vector<int>>();
+    if (!LoadTilemapSettings(json_root["tilemap"], settings.tilemap)) {
+        // return early if there is an error with the load tilemap settings function
+        return settings;
+    }
 
     // Load keybinds
     if (json_root.contains("keybinds")) {
         json json_keybinds = json_root["keybinds"];
         if (json_keybinds.contains("jump")) settings.keybinds.jump = StringToKeyboardKey(json_keybinds["jump"].get<std::string>());
         if (json_keybinds.contains("dash")) settings.keybinds.dash = StringToKeyboardKey(json_keybinds["dash"].get<std::string>());
+        if (json_keybinds.contains("grab")) settings.keybinds.grab = StringToKeyboardKey(json_keybinds["grab"].get<std::string>());
         if (json_keybinds.contains("up")) settings.keybinds.up = StringToKeyboardKey(json_keybinds["up"].get<std::string>());
         if (json_keybinds.contains("down")) settings.keybinds.down = StringToKeyboardKey(json_keybinds["down"].get<std::string>());
         if (json_keybinds.contains("left")) settings.keybinds.left = StringToKeyboardKey(json_keybinds["left"].get<std::string>());

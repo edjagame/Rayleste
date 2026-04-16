@@ -29,6 +29,10 @@
 #define DASH_COOLDOWN 0.3f
 #define RESPAWN_TIME 1.0f
 
+#define WALL_CLIMB_SPEED 180.0f
+#define WALL_SLIDE_SPEED 120.0f
+#define WALL_JUMP_HORIZONTAL_MULTIPLIER 1.25f
+
 class Player;
 
 class PlayerState {
@@ -56,6 +60,13 @@ public:
 };
 
 class PlayerDashing : public PlayerState {
+public:
+    void Enter();
+    void Update(float delta_time);
+    void Exit();
+};
+
+class PlayerWallClimbing : public PlayerState {
 public:
     void Enter();
     void Update(float delta_time);
@@ -97,6 +108,11 @@ public:
     bool has_dashed = false;
     Vector2 dash_direction = {0.0f, 0.0f};
 
+    // Wall climbing variables
+    float wall_climb_speed = WALL_CLIMB_SPEED;
+    float wall_slide_speed = WALL_SLIDE_SPEED;
+    float wall_jump_horizontal_multiplier = WALL_JUMP_HORIZONTAL_MULTIPLIER;
+
     // Respawn variables
     Vector2 current_respawn_point = {0.0f, 0.0f};
     float respawn_timer = 0.0f;
@@ -106,10 +122,12 @@ public:
     PlayerGrounded grounded;
     PlayerAirborne airborne;
     PlayerDashing dashing;
+    PlayerWallClimbing wall_climbing;
     PlayerDead dead;
-    // Keybinds
+    // Keybinds (defaults, changed in settings.ini)
     KeyboardKey JUMP_KEY = KEY_SPACE;
     KeyboardKey DASH_KEY = KEY_ENTER;
+    KeyboardKey GRAB_KEY = KEY_LEFT_SHIFT;
     KeyboardKey UP_KEY = KEY_UP;
     KeyboardKey DOWN_KEY = KEY_DOWN;
     KeyboardKey LEFT_KEY = KEY_LEFT;
@@ -125,7 +143,7 @@ public:
 
     PlayerState* GetCurrentState();
 
-    void LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey up, 
+    void LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey grab, KeyboardKey up, 
                       KeyboardKey down, KeyboardKey left, KeyboardKey right);
 
     void SetGrid(Grid* grid) { this->grid = grid; }
@@ -137,6 +155,8 @@ public:
     TileType CeilingType();
     TileType LeftWallType();
     TileType RightWallType();
+    bool IsAdjacentToLeftWall();
+    bool IsAdjacentToRightWall();
 };
 
 #endif

@@ -18,7 +18,7 @@
 #include <iostream>
 #include "Player.hpp"
 
-#define GRAVITY 2000.0f
+#define GRAVITY 3000.0f
 #define JUMP_MULTIPLIER 2.5f
 
 const Color PLAYER_COLOR = {200, 0, 0, 255};
@@ -33,14 +33,7 @@ void Player::Update(float delta_time) {
         dash_cooldown_timer -= delta_time;
     }
     
-    Vector2 old_position = position;
-    
-    position = Vector2Add(position, Vector2Scale(velocity, delta_time));
-    
-    if (LeftWallType() == TileType::SOLID || RightWallType() == TileType::SOLID) {
-        position.x = old_position.x;
-        velocity.x = 0.0f;
-    }
+    current_state->Update(delta_time);
 
     if (current_state != &dead && (FloorType() == TileType::SPIKE ||
         CeilingType() == TileType::SPIKE || 
@@ -48,8 +41,6 @@ void Player::Update(float delta_time) {
         RightWallType() == TileType::SPIKE)) {
         SetState(&dead);
     }
-    
-    current_state->Update(delta_time);
 }
 
 void Player::Draw() {
@@ -87,6 +78,60 @@ void Player::SetState(PlayerState* state) {
 
 PlayerState* Player::GetCurrentState() {
     return current_state;
+}
+
+Vector2 Player::StepwiseMove(Vector2 movement) {
+    // Movement accumulator
+    Vector2 moved = {0.0f, 0.0f};
+
+    // Split horizontal movement into discrete steps and check for 
+    // collisions at each step
+    if (movement.x != 0.0f) {
+        int x_steps = static_cast<int>(ceil(fabs(movement.x)));
+        if (x_steps < 1) x_steps = 1;
+        float x_step = movement.x / x_steps;
+
+        for (int i = 0; i < x_steps; i++) {
+            float previous_x = position.x;
+            position.x += x_step;
+            
+            // checks if moving to the left and hits a solid tile on the left and vice versa
+            bool hit_wall = (x_step > 0.0f && RightWallType() == TileType::SOLID) ||
+                            (x_step < 0.0f && LeftWallType() == TileType::SOLID);
+
+            if (hit_wall) {
+                position.x = round(previous_x);
+                velocity.x = 0.0f;
+                break;
+            }
+
+            moved.x += x_step;
+        }
+    }
+
+    // Split vertical movement into discrete steps and check for collisions at each step
+    if (movement.y != 0.0f) {
+        int y_steps = static_cast<int>(ceil(fabs(movement.y)));
+        if (y_steps < 1) y_steps = 1;
+
+        float y_step = movement.y / y_steps;
+        for (int i = 0; i < y_steps; i++) {
+            float previous_y = position.y;
+            position.y += y_step;
+
+            bool hit_surface = (y_step > 0.0f && FloorType() == TileType::SOLID) ||
+                               (y_step < 0.0f && CeilingType() == TileType::SOLID);
+            if (hit_surface) {
+                position.y = round(previous_y);
+                velocity.y = 0.0f;
+                break;
+            }
+
+            moved.y += y_step;
+        }
+    }
+
+    return moved;
 }
 
 void Player::LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey grab, KeyboardKey up, 
@@ -143,15 +188,13 @@ void PlayerDashing::Enter() {
 }
 
 void PlayerWallClimbing::Enter() {
-    if (player->velocity.y > WALL_SLIDE_SPEED) {
-        player->velocity.y = WALL_SLIDE_SPEED;
-    }
-    player->velocity.x = 0.0f;
+    player->velocity = {0.0f, 0.0f};
 }
 
 void PlayerDead::Enter() {
     player->respawn_timer = 0.0f;
     player->color = DEAD_COLOR;
+    player->velocity = {0.0f, 0.0f};
 }
 
 /**************************************************
@@ -172,6 +215,9 @@ void PlayerDead::Exit() {}
  **************************************************/
 void PlayerGrounded::Update(float delta_time) {
 
+    // Moving on ground
+    Vector2 ground_movement = {0.0f, 0.0f};
+    
     if (IsKeyDown(player->RIGHT_KEY)) {
         player->velocity.x = player->speed;
         player->is_facing_right = true;
@@ -181,30 +227,38 @@ void PlayerGrounded::Update(float delta_time) {
     } else {
         player->velocity.x = 0.0f;
     }
+    
+    ground_movement.x = player->velocity.x * delta_time;
+    player->StepwiseMove(ground_movement);
 
+    // On jump, set to airborne
     if (IsKeyDown(player->JUMP_KEY)) {
         player->velocity.y = -player->speed * JUMP_MULTIPLIER;
         player->SetState(&player->airborne);
+        return;
     }
 
+    // Check for wall grab input and if player is adjacent to a wall
     bool on_wall = player->IsAdjacentToLeftWall() || player->IsAdjacentToRightWall();
     if (IsKeyDown(player->GRAB_KEY) && on_wall) {
         player->SetState(&player->wall_climbing);
         return;
     }
 
+    // Get to dashing
     if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
+        return;
     }
     
+    // Falling off edges
     if(player->FloorType() != TileType::SOLID) {
         player->SetState(&player->airborne);
     }
-
-    
 }
 
 void PlayerAirborne::Update(float delta_time) {
+    // Horizontal movement in air
     if (IsKeyDown(player->RIGHT_KEY)) {
         player->velocity.x = player->speed;
         player->is_facing_right = true;
@@ -215,22 +269,19 @@ void PlayerAirborne::Update(float delta_time) {
         player->velocity.x = 0.0f;
     }
     
+    // Check for dash input
     if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
         player->has_dashed = true;
-    }
-
-    bool on_left_wall = player->IsAdjacentToLeftWall();
-    bool on_right_wall = player->IsAdjacentToRightWall();
-    bool on_wall = on_left_wall || on_right_wall;
-
-    if (player->FloorType() != TileType::SOLID && on_wall && IsKeyDown(player->GRAB_KEY)) {
-        player->SetState(&player->wall_climbing);
         return;
     }
-    
+
+    // Apply gravity
     player->acceleration.y = GRAVITY;
     player->velocity.y += player->acceleration.y * delta_time;
+
+    Vector2 air_movement = { player->velocity.x * delta_time, player->velocity.y * delta_time };
+    player->StepwiseMove(air_movement);
 
     // snap to tile and switch back to grounded on touching a solid tile
     if (player->FloorType() == TileType::SOLID) {
@@ -240,6 +291,16 @@ void PlayerAirborne::Update(float delta_time) {
         player->position.y = row * tile_h - player->height;
         player->SetState(&player->grounded);
         player->has_dashed = false; 
+        return;
+    }
+
+    // Check for wall grab after movement so wall-jump impulse can separate from the wall
+    bool on_left_wall = player->IsAdjacentToLeftWall();
+    bool on_right_wall = player->IsAdjacentToRightWall();
+    bool on_wall = on_left_wall || on_right_wall;
+    if (on_wall && IsKeyDown(player->GRAB_KEY)) {
+        player->SetState(&player->wall_climbing);
+        return;
     }
 }
 
@@ -247,24 +308,24 @@ void PlayerAirborne::Update(float delta_time) {
 void PlayerDashing::Update(float delta_time) {
     const float DASH_SPEED = player->speed * 4.0f; 
     player->dash_time += delta_time;
-    
-    Vector2 old_position = player->position;
-    Vector2 dash_movement = Vector2Scale(player->dash_direction, DASH_SPEED * delta_time);
-    player->position = Vector2Add(player->position, dash_movement);
+
+    // Calculate how far the player should move in a frame
+    Vector2 delta_dash = Vector2Scale(player->dash_direction, DASH_SPEED * delta_time);
     player->velocity = {0.0f, 0.0f};
+    Vector2 previous_position = player->position;
+
+    player->StepwiseMove(delta_dash);
     
-    // Collision check during dashing
-    bool hit_ceiling = player->CeilingType() == TileType::SOLID;
-    bool hit_wall = player->LeftWallType() == TileType::SOLID || player->RightWallType() == TileType::SOLID;
-    bool hit_floor = player->dash_direction.y > 0.0f && player->FloorType() == TileType::SOLID;
+    bool has_collided = Vector2Distance(player->position, Vector2Add(previous_position, delta_dash)) > 0.01f;
     
-    if (hit_ceiling || hit_wall || hit_floor) {
-        player->position = old_position;
+    // Immediately end dash on collision
+    if (has_collided) {
         player->dash_cooldown_timer = DASH_COOLDOWN;
         player->SetState(&player->airborne);
         return;
     }
     
+    // End dash after duration
     if (player->dash_time >= player->dash_duration) {
         player->dash_cooldown_timer = DASH_COOLDOWN;
         if (player->FloorType() == TileType::SOLID) {
@@ -288,17 +349,6 @@ void PlayerWallClimbing::Update(float delta_time) {
         return;
     }
 
-    if (!on_wall || !IsKeyDown(player->GRAB_KEY)) {
-        player->SetState(&player->airborne);
-        return;
-    }
-
-    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
-        player->SetState(&player->dashing);
-        player->has_dashed = true;
-        return;
-    }
-
     if (IsKeyDown(player->JUMP_KEY)) {
         float wall_jump_x = player->speed * WALL_JUMP_HORIZONTAL_MULTIPLIER;
         if (on_left_wall) {
@@ -314,6 +364,18 @@ void PlayerWallClimbing::Update(float delta_time) {
         return;
     }
 
+    // Player lets go of the wall grab or is not on a wall
+    if (!on_wall || !IsKeyDown(player->GRAB_KEY)) {
+        player->SetState(&player->airborne);
+        return;
+    }
+    
+    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
+        player->SetState(&player->dashing);
+        player->has_dashed = true;
+        return;
+    }
+
     player->velocity.x = 0.0f;
 
     if (IsKeyDown(player->UP_KEY)) {
@@ -321,12 +383,15 @@ void PlayerWallClimbing::Update(float delta_time) {
     } else if (IsKeyDown(player->DOWN_KEY)) {
         player->velocity.y = WALL_CLIMB_SPEED;
     } else {
-        player->velocity.y = WALL_SLIDE_SPEED;
+        player->velocity.y = 0.0f;
     }
 
     if (player->CeilingType() == TileType::SOLID && player->velocity.y < 0.0f) {
         player->velocity.y = 0.0f;
     }
+    
+    Vector2 climb_movement = { 0.0f, player->velocity.y * delta_time };
+    player->StepwiseMove(climb_movement);
 }
 
 void PlayerDead::Update(float delta_time) {

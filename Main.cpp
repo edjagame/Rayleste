@@ -71,10 +71,11 @@ int main() {
 
     while(!WindowShouldClose()){
         float deltaTime = GetFrameTime();
-        // ========== UPDATE ==========
+        // ========== GAME UPDATE ==========
 
         player.Update(deltaTime);
 
+        // updates the camera to follow the player if they move to a new screen
         player_center = {
             player.position.x + player.width / 2.0f,
             player.position.y + player.height / 2.0f

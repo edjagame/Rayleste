@@ -31,7 +31,7 @@
 
 #define WALL_CLIMB_SPEED 180.0f
 #define WALL_SLIDE_SPEED 120.0f
-#define WALL_JUMP_HORIZONTAL_MULTIPLIER 1.25f
+#define WALL_JUMP_HORIZONTAL_MULTIPLIER 5.0f
 
 class Player;
 
@@ -150,6 +150,9 @@ public:
     Grid* GetGrid() { return grid; }
     
 
+    // Movement and collision
+    Vector2 StepwiseMove(Vector2 movement);
+    
     // Collision checks
     TileType FloorType();
     TileType CeilingType();

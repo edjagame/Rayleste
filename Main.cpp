@@ -13,8 +13,14 @@ const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
 const Vector2 center = {WINDOW_WIDTH/2, WINDOW_HEIGHT/2};
 const int FPS = 60;
+const float SCREEN_TRANSITION_DURATION = 0.5f;
 
 const std::string SETTINGS_FILEPATH = "settings.ini";
+
+enum GameState {
+    GAMEPLAY,
+    TRANSITION,
+};
 
 int main() {
     // Init Scene
@@ -69,21 +75,45 @@ int main() {
         camera_view.target = grid.GetScreenCenter(current_screen_index);
     }
 
+    Vector2 camera_target_prev = camera_view.target;
+    Vector2 camera_target_next = camera_view.target;
+    float screen_transition_timer = 0.0f;
+
+    GameState game_state = GAMEPLAY;
+
     while(!WindowShouldClose()){
         float deltaTime = GetFrameTime();
         // ========== GAME UPDATE ==========
 
-        player.Update(deltaTime);
+        if (game_state == GAMEPLAY) {
+            player.Update(deltaTime);
 
-        // updates the camera to follow the player if they move to a new screen
-        player_center = {
-            player.position.x + player.width / 2.0f,
-            player.position.y + player.height / 2.0f
-        };
-        int new_screen_index = grid.GetScreenIndex(player_center);
-        if (new_screen_index >= 0 && new_screen_index != current_screen_index) {
-            current_screen_index = new_screen_index;
-            camera_view.target = grid.GetScreenCenter(current_screen_index);
+            // updates the camera to follow the player if they move to a new screen
+            player_center = {
+                player.position.x + player.width / 2.0f,
+                player.position.y + player.height / 2.0f
+            };
+            int new_screen_index = grid.GetScreenIndex(player_center);
+            if (new_screen_index >= 0 && new_screen_index != current_screen_index) {
+                current_screen_index = new_screen_index;
+                camera_target_prev = camera_view.target;
+                camera_target_next = grid.GetScreenCenter(current_screen_index);
+                screen_transition_timer = 0.0f;
+                game_state = TRANSITION;
+            }
+        }
+
+        else if (game_state == TRANSITION) {
+            if (screen_transition_timer < SCREEN_TRANSITION_DURATION) {
+                screen_transition_timer += deltaTime;
+                float t = screen_transition_timer / SCREEN_TRANSITION_DURATION;
+                t = (t > 1.0f) ? 1.0f : t;
+                camera_view.target = Vector2Lerp(camera_target_prev, camera_target_next, t);
+            }
+            else {
+                camera_view.target = camera_target_next;
+                game_state = GAMEPLAY;
+            }
         }
 
         // ========== DRAW ==========

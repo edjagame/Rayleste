@@ -18,9 +18,6 @@
 #include <iostream>
 #include "Player.hpp"
 
-#define GRAVITY 3000.0f
-#define JUMP_MULTIPLIER 2.5f
-
 const Color PLAYER_COLOR = {200, 0, 0, 255};
 const Color DASHLESS_COLOR = {0, 200, 200, 255};
 const Color DEAD_COLOR = {0, 0, 0, 255};
@@ -31,6 +28,10 @@ const Color DEAD_COLOR = {0, 0, 0, 255};
 void Player::Update(float delta_time) {
     if (dash_cooldown_timer > 0.0f) {
         dash_cooldown_timer -= delta_time;
+    }
+    
+    if (wall_jump_cooldown_timer > 0.0f) {
+        wall_jump_cooldown_timer -= delta_time;
     }
     
     current_state->Update(delta_time);
@@ -150,6 +151,8 @@ void Player::LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey grab, 
  **************************************************/
 void PlayerGrounded::Enter() {
     player->color = PLAYER_COLOR;
+    player->can_wall_grab = true;
+    player->wall_grab_timer = 0.0f;
 }
 
 void PlayerAirborne::Enter() {
@@ -259,14 +262,14 @@ void PlayerGrounded::Update(float delta_time) {
 
 void PlayerAirborne::Update(float delta_time) {
     // Horizontal movement in air
-    if (IsKeyDown(player->RIGHT_KEY)) {
-        player->velocity.x = player->speed;
-        player->is_facing_right = true;
-    } else if (IsKeyDown(player->LEFT_KEY)) {
-        player->velocity.x = -player->speed;
-        player->is_facing_right = false;
-    } else {
-        player->velocity.x = 0.0f;
+    if (player->wall_jump_cooldown_timer <= 0.0f) {
+        if (IsKeyDown(player->RIGHT_KEY)) {
+            player->velocity.x = player->speed;
+            player->is_facing_right = true;
+        } else if (IsKeyDown(player->LEFT_KEY)) {
+            player->velocity.x = -player->speed;
+            player->is_facing_right = false;
+        }
     }
     
     // Check for dash input
@@ -289,6 +292,7 @@ void PlayerAirborne::Update(float delta_time) {
         float tile_h = player->GetGrid()->tile_size_grid.y;
         int row = (int)((player->position.y + player->height) / tile_h);
         player->position.y = row * tile_h - player->height;
+        player->wall_jump_cooldown_timer = 0.0f;
         player->SetState(&player->grounded);
         player->has_dashed = false; 
         return;
@@ -342,6 +346,15 @@ void PlayerWallClimbing::Update(float delta_time) {
     bool on_right_wall = player->IsAdjacentToRightWall();
     bool on_wall = on_left_wall || on_right_wall;
 
+    player->wall_grab_timer += delta_time;
+    player->can_wall_grab = player->wall_grab_timer < WALL_GRAB_DURATION;
+
+    if (!player->can_wall_grab) {
+        player->SetState(&player->airborne);
+        return;
+    }
+
+    // switch to grounded if on the floor
     if (player->FloorType() == TileType::SOLID && !IsKeyDown(player->UP_KEY)) {
         player->velocity.y = 0.0f;
         player->SetState(&player->grounded);
@@ -349,7 +362,8 @@ void PlayerWallClimbing::Update(float delta_time) {
         return;
     }
 
-    if (IsKeyDown(player->JUMP_KEY)) {
+    // wall jump input
+    if (IsKeyPressed(player->JUMP_KEY)) {
         float wall_jump_x = player->speed * WALL_JUMP_HORIZONTAL_MULTIPLIER;
         if (on_left_wall) {
             player->velocity.x = wall_jump_x;
@@ -360,6 +374,7 @@ void PlayerWallClimbing::Update(float delta_time) {
         }
 
         player->velocity.y = -player->speed * JUMP_MULTIPLIER;
+        player->wall_jump_cooldown_timer = WALL_JUMP_COOLDOWN;
         player->SetState(&player->airborne);
         return;
     }

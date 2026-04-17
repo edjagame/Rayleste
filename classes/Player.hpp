@@ -25,13 +25,17 @@
 #include <raymath.h>
 #include "Grid.hpp"
 
+#define GRAVITY 4000.0f
+#define JUMP_MULTIPLIER 2.5f
+
 #define DASH_DURATION 0.2f
 #define DASH_COOLDOWN 0.3f
 #define RESPAWN_TIME 1.0f
 
 #define WALL_CLIMB_SPEED 180.0f
-#define WALL_SLIDE_SPEED 120.0f
-#define WALL_JUMP_HORIZONTAL_MULTIPLIER 5.0f
+#define WALL_GRAB_DURATION 2.0f
+#define WALL_JUMP_HORIZONTAL_MULTIPLIER 3.0f
+#define WALL_JUMP_COOLDOWN 0.1f
 
 class Player;
 
@@ -109,9 +113,11 @@ public:
     Vector2 dash_direction = {0.0f, 0.0f};
 
     // Wall climbing variables
+    bool can_wall_grab = true;
     float wall_climb_speed = WALL_CLIMB_SPEED;
-    float wall_slide_speed = WALL_SLIDE_SPEED;
+    float wall_grab_timer = 0.0f;
     float wall_jump_horizontal_multiplier = WALL_JUMP_HORIZONTAL_MULTIPLIER;
+    float wall_jump_cooldown_timer = 0.0f;
 
     // Respawn variables
     Vector2 current_respawn_point = {0.0f, 0.0f};

@@ -101,3 +101,11 @@ Vector2 Grid::GetScreenCenter(int screen_index) const {
         screen.world_position.y + (screen.dimensions_tiles.y * tile_size_grid.y) / 2.0f
     };
 }
+
+Vector2 Grid::GetScreenDimensions(int screen_index) const {
+    if (screen_index < 0 || screen_index >= screens.size()) {
+        return {0.0f, 0.0f};
+    }
+    const Screen& screen = screens[screen_index];
+    return screen.dimensions_tiles;
+}

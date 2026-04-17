@@ -26,8 +26,9 @@
 #include "Grid.hpp"
 
 #define GRAVITY 4000.0f
-#define JUMP_MULTIPLIER 2.5f
+#define JUMP_MULTIPLIER 2.0f
 
+#define DASH_MULTIPLIER 3.0f
 #define DASH_DURATION 0.2f
 #define DASH_COOLDOWN 0.3f
 #define RESPAWN_TIME 1.0f

@@ -310,7 +310,7 @@ void PlayerAirborne::Update(float delta_time) {
 
 
 void PlayerDashing::Update(float delta_time) {
-    const float DASH_SPEED = player->speed * 4.0f; 
+    const float DASH_SPEED = player->speed * DASH_MULTIPLIER; 
     player->dash_time += delta_time;
 
     // Calculate how far the player should move in a frame
@@ -423,14 +423,34 @@ void PlayerDead::Update(float delta_time) {
  *             OTHER PLAYER FUNCTIONS             *
  **************************************************/
 
+float padding = 3.0f; 
+
 TileType Player::FloorType() {
-    Vector2 feet_position = { position.x + width / 2.0f, position.y + height };
-    return GetGrid()->GetTileType(feet_position);
+    Vector2 feet_left = { position.x + padding, position.y + height };
+    Vector2 feet_center = { position.x + width / 2.0f, position.y + height };
+    Vector2 feet_right = { position.x + width - padding, position.y + height };
+    
+    if (GetGrid()->GetTileType(feet_left) == TileType::SOLID ||
+        GetGrid()->GetTileType(feet_center) == TileType::SOLID ||
+        GetGrid()->GetTileType(feet_right) == TileType::SOLID) {
+        return TileType::SOLID;
+    }
+    
+    return GetGrid()->GetTileType(feet_center);
 }
 
 TileType Player::CeilingType() {
-    Vector2 head_position = { position.x + width / 2.0f, position.y };
-    return GetGrid()->GetTileType(head_position);
+    Vector2 head_left = { position.x + padding, position.y };
+    Vector2 head_center = { position.x + width / 2.0f, position.y };
+    Vector2 head_right = { position.x + width - padding, position.y };
+    
+    if (GetGrid()->GetTileType(head_left) == TileType::SOLID ||
+        GetGrid()->GetTileType(head_center) == TileType::SOLID ||
+        GetGrid()->GetTileType(head_right) == TileType::SOLID) {
+        return TileType::SOLID;
+    }
+    
+    return GetGrid()->GetTileType(head_center);
 }
 
 TileType Player::LeftWallType() {

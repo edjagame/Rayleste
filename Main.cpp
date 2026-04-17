@@ -17,6 +17,11 @@ const float SCREEN_TRANSITION_DURATION = 0.5f;
 
 const std::string SETTINGS_FILEPATH = "settings.ini";
 
+const float PLAYER_WIDTH = 50.0f;
+const float PLAYER_HEIGHT = 50.0f;
+const float PLAYER_SPEED = 400.0f;
+const float PLAYER_MASS = 1.0f;
+
 enum GameState {
     GAMEPLAY,
     TRANSITION,
@@ -43,7 +48,7 @@ int main() {
 
 
     // Init Player
-    Player player = Player(center, 50.0f, 50.0f, 300.0f, 1.0f);
+    Player player = Player(center, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_SPEED, PLAYER_MASS);
     player.SetState(&player.airborne);
     player.LoadKeybinds(settings.keybinds.jump, settings.keybinds.dash, settings.keybinds.grab,
                         settings.keybinds.up, settings.keybinds.down,
@@ -78,6 +83,8 @@ int main() {
     Vector2 camera_target_prev = camera_view.target;
     Vector2 camera_target_next = camera_view.target;
     float screen_transition_timer = 0.0f;
+    float camera_zoom_prev = camera_view.zoom;
+    float camera_zoom_next = camera_view.zoom;
 
     GameState game_state = GAMEPLAY;
 
@@ -95,10 +102,19 @@ int main() {
             };
             int new_screen_index = grid.GetScreenIndex(player_center);
             if (new_screen_index >= 0 && new_screen_index != current_screen_index) {
+                // get new screen center
                 current_screen_index = new_screen_index;
                 camera_target_prev = camera_view.target;
                 camera_target_next = grid.GetScreenCenter(current_screen_index);
                 screen_transition_timer = 0.0f;
+                
+                // calculate new camera zoom
+                camera_zoom_prev = camera_view.zoom;
+                Vector2 new_screen_dimensions = grid.GetScreenDimensions(new_screen_index);
+                float screen_width = new_screen_dimensions.x * grid.tile_size_grid.x;
+                float screen_height = new_screen_dimensions.y * grid.tile_size_grid.y;
+                camera_zoom_next = fminf(WINDOW_WIDTH / screen_width, WINDOW_HEIGHT / screen_height);
+                
                 game_state = TRANSITION;
             }
         }
@@ -109,9 +125,11 @@ int main() {
                 float t = screen_transition_timer / SCREEN_TRANSITION_DURATION;
                 t = (t > 1.0f) ? 1.0f : t;
                 camera_view.target = Vector2Lerp(camera_target_prev, camera_target_next, t);
+                camera_view.zoom = Lerp(camera_zoom_prev, camera_zoom_next, t);
             }
             else {
                 camera_view.target = camera_target_next;
+                camera_view.zoom = camera_zoom_next;
                 game_state = GAMEPLAY;
             }
         }

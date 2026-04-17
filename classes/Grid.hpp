@@ -49,4 +49,5 @@ public:
     TileType GetTileType(Vector2 position);
     int GetScreenIndex(Vector2 position) const;
     Vector2 GetScreenCenter(int screen_index) const;
+    Vector2 GetScreenDimensions(int screen_index) const;
 };

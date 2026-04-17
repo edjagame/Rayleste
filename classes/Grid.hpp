@@ -20,6 +20,7 @@ struct Tile {
 struct Screen {
     Vector2 world_position;
     Vector2 dimensions_tiles;
+    Vector2 checkpoint_position;
     std::vector<int> tile_data;
 };
 
@@ -50,4 +51,5 @@ public:
     int GetScreenIndex(Vector2 position) const;
     Vector2 GetScreenCenter(int screen_index) const;
     Vector2 GetScreenDimensions(int screen_index) const;
+    Vector2 GetScreenCheckpoint(int screen_index) const;
 };

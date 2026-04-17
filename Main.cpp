@@ -78,6 +78,7 @@ int main() {
     int current_screen_index = grid.GetScreenIndex(player_center);
     if (current_screen_index >= 0) {
         camera_view.target = grid.GetScreenCenter(current_screen_index);
+        player.current_respawn_point = grid.GetScreenCheckpoint(current_screen_index);
     }
 
     Vector2 camera_target_prev = camera_view.target;
@@ -104,6 +105,7 @@ int main() {
             if (new_screen_index >= 0 && new_screen_index != current_screen_index) {
                 // get new screen center
                 current_screen_index = new_screen_index;
+                player.current_respawn_point = grid.GetScreenCheckpoint(current_screen_index);
                 camera_target_prev = camera_view.target;
                 camera_target_next = grid.GetScreenCenter(current_screen_index);
                 screen_transition_timer = 0.0f;

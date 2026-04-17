@@ -20,6 +20,12 @@ Screen LoadScreen(const json& j) {
 
     screen.world_position = LoadVector2(j["world_position"]);
     screen.dimensions_tiles = LoadVector2(j["dimensions_tiles"]);
+    if (j.contains("checkpoint_position")) {
+        screen.checkpoint_position = LoadVector2(j["checkpoint_position"]);
+    }
+    else {
+        screen.checkpoint_position = screen.world_position;
+    }
     screen.tile_data = j["tile_data"].get<std::vector<int>>();
 
     return screen;

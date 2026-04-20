@@ -161,6 +161,7 @@ void PlayerAirborne::Enter() {
 void PlayerDashing::Enter() {
     player->dash_time = 0.0f;
     player->velocity = {0.0f, 0.0f};
+    player->PlayDashSound();
     
     // Determine dash direction once at the start
     bool up_key_pressed = IsKeyDown(player->UP_KEY);
@@ -198,6 +199,7 @@ void PlayerDead::Enter() {
     player->respawn_timer = 0.0f;
     player->color = DEAD_COLOR;
     player->velocity = {0.0f, 0.0f};
+    player->PlayDeathSound();
 }
 
 /**************************************************
@@ -237,6 +239,7 @@ void PlayerGrounded::Update(float delta_time) {
     // On jump, set to airborne
     if (IsKeyDown(player->JUMP_KEY)) {
         player->velocity.y = -player->speed * JUMP_MULTIPLIER;
+        player->PlayJumpSound();
         player->SetState(&player->airborne);
         return;
     }
@@ -374,6 +377,7 @@ void PlayerWallClimbing::Update(float delta_time) {
         }
 
         player->velocity.y = -player->speed * JUMP_MULTIPLIER;
+        player->PlayJumpSound();
         player->wall_jump_cooldown_timer = WALL_JUMP_COOLDOWN;
         player->SetState(&player->airborne);
         return;
@@ -471,4 +475,26 @@ bool Player::IsAdjacentToLeftWall() {
 bool Player::IsAdjacentToRightWall() {
     Vector2 right_position = { position.x + width + 1, position.y + height / 2.0f };
     return GetGrid()->GetTileType(right_position) == TileType::SOLID;
+}
+
+/**************************************************
+ *             SOUND EFFECT FUNCTIONS             *
+ **************************************************/
+
+void Player::PlayJumpSound() {
+    if (sound_jump != nullptr && !IsSoundPlaying(*sound_jump)) {
+        PlaySound(*sound_jump);
+    }
+}
+
+void Player::PlayDashSound() {
+    if (sound_dash != nullptr && !IsSoundPlaying(*sound_dash)) {
+        PlaySound(*sound_dash);
+    }
+}
+
+void Player::PlayDeathSound() {
+    if (sound_death != nullptr && !IsSoundPlaying(*sound_death)) {
+        PlaySound(*sound_death);
+    }
 }

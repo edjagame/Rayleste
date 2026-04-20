@@ -32,9 +32,17 @@ int main() {
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Rayleste");
     SetTargetFPS(FPS);
 
+    // Init Audio Device
+    InitAudioDevice();
 
     // Init Settings
     Settings settings = LoadSettings(SETTINGS_FILEPATH);
+    
+    // Load Sounds
+    Sound sound_jump = LoadSound(settings.sounds.jump.c_str());
+    Sound sound_dash = LoadSound(settings.sounds.dash.c_str());
+    Sound sound_death = LoadSound(settings.sounds.death.c_str());
+    Music music_bgm = LoadMusicStream(settings.sounds.bgm.c_str());
     
     // Init Tile Texture
     Texture2D tilemap = LoadTexture(settings.tilemap.image_filename.c_str());
@@ -53,6 +61,14 @@ int main() {
     player.LoadKeybinds(settings.keybinds.jump, settings.keybinds.dash, settings.keybinds.grab,
                         settings.keybinds.up, settings.keybinds.down,
                         settings.keybinds.left, settings.keybinds.right);
+    
+    player.sound_jump = &sound_jump;
+    player.sound_dash = &sound_dash;
+    player.sound_death = &sound_death;
+    
+    // Play background music (loop)
+    SetMusicVolume(music_bgm, 0.5f);
+    PlayMusicStream(music_bgm);
 
     // Init Camera
     int cam_type;
@@ -92,6 +108,9 @@ int main() {
     while(!WindowShouldClose()){
         float deltaTime = GetFrameTime();
         // ========== GAME UPDATE ==========
+
+        // Update background music
+        UpdateMusicStream(music_bgm);
 
         if (game_state == GAMEPLAY) {
             player.Update(deltaTime);
@@ -156,6 +175,10 @@ int main() {
 
     UnloadTexture(tilemap);
     UnloadTexture(background);
+    UnloadSound(sound_jump);
+    UnloadSound(sound_dash);
+    UnloadSound(sound_death);
+    UnloadMusicStream(music_bgm);
     CloseAudioDevice();
     CloseWindow();
 

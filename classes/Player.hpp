@@ -140,6 +140,10 @@ public:
     KeyboardKey LEFT_KEY = KEY_LEFT;
     KeyboardKey RIGHT_KEY = KEY_RIGHT;
 
+    Sound* sound_jump = nullptr;
+    Sound* sound_dash = nullptr;
+    Sound* sound_death = nullptr;
+
     Player(Vector2 pos, float w, float h, float spd, float m);
 
     void Update(float delta_time);
@@ -167,6 +171,11 @@ public:
     TileType RightWallType();
     bool IsAdjacentToLeftWall();
     bool IsAdjacentToRightWall();
+
+    // Sound effects
+    void PlayJumpSound();
+    void PlayDashSound();
+    void PlayDeathSound();
 };
 
 #endif

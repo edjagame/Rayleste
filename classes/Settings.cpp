@@ -128,5 +128,14 @@ Settings LoadSettings(const std::string& filepath) {
         if (json_keybinds.contains("right")) settings.keybinds.right = StringToKeyboardKey(json_keybinds["right"].get<std::string>());
     }
 
+    // Load sounds
+    if (json_root.contains("sounds")) {
+        json json_sounds = json_root["sounds"];
+        if (json_sounds.contains("jump")) settings.sounds.jump = json_sounds["jump"].get<std::string>();
+        if (json_sounds.contains("dash")) settings.sounds.dash = json_sounds["dash"].get<std::string>();
+        if (json_sounds.contains("death")) settings.sounds.death = json_sounds["death"].get<std::string>();
+        if (json_sounds.contains("bgm")) settings.sounds.bgm = json_sounds["bgm"].get<std::string>();
+    }
+
     return settings;
 }

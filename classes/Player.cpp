@@ -16,6 +16,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <iostream>
+#include <string>
 #include "Player.hpp"
 
 const Color PLAYER_COLOR = {200, 0, 0, 255};
@@ -42,10 +43,170 @@ void Player::Update(float delta_time) {
         RightWallType() == TileType::SPIKE)) {
         SetState(&dead);
     }
+
+    UpdateAnimation(delta_time);
 }
 
 void Player::Draw() {
-    DrawRectangle(position.x, position.y, width, height, color);
+    
+    // Loads the appropriate animation based on the current state.
+    // THis defaults to a rectangle if ever something goes wrong with loading the animations.
+    const PlayerAnimationClip* clip = GetClipByType(current_animation);
+    if (clip == nullptr || clip->texture.id == 0) {
+        DrawRectangle(position.x, position.y, width, height, color);
+        return;
+    }
+    
+    const float frame_size = float(clip->texture.height);
+    
+    ///////////////////////////////////////////////////////////////
+    // This block of code resizes the player sprite and draws it //
+    ///////////////////////////////////////////////////////////////
+    Rectangle source = {
+        frame_size * current_frame,
+        0.0f,
+        frame_size,
+        frame_size
+    };
+
+    if (!is_facing_right) {
+        source.x += frame_size;
+        source.width = -frame_size;
+    }
+
+    const float draw_height = height;
+    const float draw_width = draw_height;
+    Rectangle destination = {
+        position.x + (width - draw_width) * 0.5f,
+        position.y + (height - draw_height),
+        draw_width,
+        draw_height
+    };
+
+    DrawTexturePro(clip->texture, source, destination, {0.0f, 0.0f}, 0.0f, color);
+}
+
+// Called within the state machine to change the current animation based on Player State
+void Player::SetAnimation(PlayerAnimationType type) {
+    if (current_animation == type) {
+        return;
+    }
+
+    current_animation = type;
+    current_frame = 0;
+    animation_timer = 0.0f;
+}
+
+// animation clip getter
+const Player::PlayerAnimationClip* Player::GetClipByType(PlayerAnimationType type) const {
+    switch (type) {
+        case PlayerAnimationType::IDLE:
+            return &idle_animation;
+        case PlayerAnimationType::RUN:
+            return &run_animation;
+        case PlayerAnimationType::JUMP:
+            return &jump_animation;
+        case PlayerAnimationType::FALL:
+            return &fall_animation;
+        case PlayerAnimationType::FALL_POSE:
+            return &fall_pose_animation;
+        case PlayerAnimationType::DASH:
+            return &dash_animation;
+        case PlayerAnimationType::DEATH:
+            return &death_animation;
+        default:
+            return nullptr;
+    }
+}
+
+
+void Player::UpdateAnimation(float delta_time) {
+    const PlayerAnimationClip* clip = GetClipByType(current_animation);
+
+    // switch frames every frame_duration seconds
+    animation_timer += delta_time;
+    while (animation_timer >= clip->frame_duration) {
+        animation_timer -= clip->frame_duration;
+        current_frame++;
+
+        if (current_frame >= clip->frame_count) {
+            // reset to first frame if looping, otherwise stay on last frame
+            if (clip->loop) {
+                current_frame = 0;
+            } else {
+                current_frame = clip->frame_count - 1;
+                break;
+            }
+        }
+    }
+}
+
+bool Player::LoadAnimationClip(PlayerAnimationClip& clip, const std::string& texture_path, float frame_duration, bool loop) {
+    clip.texture = LoadTexture(texture_path.c_str());
+    if (clip.texture.id == 0) {
+        std::cerr << "Failed to load player animation: " << texture_path << std::endl;
+        return false;
+    }
+
+    // since sprite sheet is laid out horizontally, frame count is total width divided by height
+    clip.frame_count = clip.texture.width / clip.texture.height;
+    if (clip.frame_count < 1) {
+        clip.frame_count = 1;
+    }
+
+    clip.frame_duration = frame_duration;
+    clip.loop = loop;
+    return true;
+}
+
+void Player::UnloadAnimationClip(PlayerAnimationClip& clip) {
+    UnloadTexture(clip.texture);
+    clip.frame_count = 1;
+    clip.frame_duration = 0.1f;
+    clip.loop = true;
+}
+
+bool Player::LoadAnimations(
+    const std::string& idle_path,
+    const std::string& run_path,
+    const std::string& jump_path,
+    const std::string& fall_path,
+    const std::string& fall_pose_path,
+    const std::string& dash_path,
+    const std::string& death_path
+) {
+    UnloadAnimations();
+
+    // Makes sure all animations load successfully
+    bool success = true;
+    success = success && LoadAnimationClip(idle_animation, idle_path, 0.08f, true);
+    success = success && LoadAnimationClip(run_animation, run_path, 0.06f, true);
+    success = success && LoadAnimationClip(jump_animation, jump_path, 0.08f, false);
+    success = success && LoadAnimationClip(fall_animation, fall_path, 0.08f, true);
+    success = success && LoadAnimationClip(fall_pose_animation, fall_pose_path, 0.08f, true);
+    success = success && LoadAnimationClip(dash_animation, dash_path, 0.05f, false);
+    success = success && LoadAnimationClip(death_animation, death_path, 0.10f, false);
+
+    if (!success) {
+        UnloadAnimations();
+        std::cout << "Failed to load one or more player animations" << std::endl;
+        return false;
+    }
+
+    current_animation = PlayerAnimationType::IDLE;
+    current_frame = 0;
+    animation_timer = 0.0f;
+    return true;
+}
+
+void Player::UnloadAnimations() {
+    UnloadAnimationClip(idle_animation);
+    UnloadAnimationClip(run_animation);
+    UnloadAnimationClip(jump_animation);
+    UnloadAnimationClip(fall_animation);
+    UnloadAnimationClip(fall_pose_animation);
+    UnloadAnimationClip(dash_animation);
+    UnloadAnimationClip(death_animation);
 }
 
 Player::Player(Vector2 pos, float w, float h, float spd, float m) {
@@ -153,9 +314,11 @@ void PlayerGrounded::Enter() {
     player->color = PLAYER_COLOR;
     player->can_wall_grab = true;
     player->wall_grab_timer = 0.0f;
+    player->SetAnimation(Player::PlayerAnimationType::FALL_POSE);
 }
 
 void PlayerAirborne::Enter() {
+    player->SetAnimation(Player::PlayerAnimationType::JUMP);
 }
 
 void PlayerDashing::Enter() {
@@ -189,10 +352,12 @@ void PlayerDashing::Enter() {
     // Normalize and store
     player->dash_direction = Vector2Normalize(dash_direction);
     player->color = DASHLESS_COLOR;
+    player->SetAnimation(Player::PlayerAnimationType::DASH);
 }
 
 void PlayerWallClimbing::Enter() {
     player->velocity = {0.0f, 0.0f};
+    player->SetAnimation(Player::PlayerAnimationType::FALL);
 }
 
 void PlayerDead::Enter() {
@@ -200,6 +365,7 @@ void PlayerDead::Enter() {
     player->color = DEAD_COLOR;
     player->velocity = {0.0f, 0.0f};
     player->PlayDeathSound();
+    player->SetAnimation(Player::PlayerAnimationType::DEATH);
 }
 
 /**************************************************
@@ -235,6 +401,13 @@ void PlayerGrounded::Update(float delta_time) {
     
     ground_movement.x = player->velocity.x * delta_time;
     player->StepwiseMove(ground_movement);
+
+    // Set animation to running or idle based on velocity vecotr
+    if (fabsf(player->velocity.x) > 1.0f) {
+        player->SetAnimation(Player::PlayerAnimationType::RUN);
+    } else {
+        player->SetAnimation(Player::PlayerAnimationType::IDLE);
+    }
 
     // On jump, set to airborne
     if (IsKeyDown(player->JUMP_KEY)) {
@@ -308,6 +481,13 @@ void PlayerAirborne::Update(float delta_time) {
     if (on_wall && IsKeyDown(player->GRAB_KEY)) {
         player->SetState(&player->wall_climbing);
         return;
+    }
+
+    // Set animation to jumping or falling based on vertical velocity
+    if (player->velocity.y < -80.0f) {
+        player->SetAnimation(Player::PlayerAnimationType::JUMP);
+    } else {
+        player->SetAnimation(Player::PlayerAnimationType::FALL);
     }
 }
 

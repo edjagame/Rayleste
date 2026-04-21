@@ -23,6 +23,7 @@
 
 #include <raylib.h>
 #include <raymath.h>
+#include <string>
 #include "Grid.hpp"
 
 #define GRAVITY 4000.0f
@@ -91,6 +92,46 @@ class Player {
     Grid* grid = nullptr;
 
 public:
+    /***************************/
+    /**** PLAYER ANIMATIONS ****/
+    /***************************/
+    enum class PlayerAnimationType {
+        IDLE,
+        RUN,
+        JUMP,
+        FALL,
+        FALL_POSE,
+        DASH,
+        DEATH,
+    };
+
+    // Contains animation data for each type of animation
+    struct PlayerAnimationClip {
+        Texture2D texture = {0};
+        int frame_count = 1;
+        float frame_duration = 0.1f;
+        bool loop = true;
+    };
+
+    PlayerAnimationClip idle_animation;
+    PlayerAnimationClip run_animation;
+    PlayerAnimationClip jump_animation;
+    PlayerAnimationClip fall_animation;
+    PlayerAnimationClip fall_pose_animation;
+    PlayerAnimationClip dash_animation;
+    PlayerAnimationClip death_animation;
+
+    PlayerAnimationType current_animation = PlayerAnimationType::IDLE;
+    int current_frame = 0;
+    float animation_timer = 0.0f;
+
+private:
+    const PlayerAnimationClip* GetClipByType(PlayerAnimationType type) const;
+    void UpdateAnimation(float delta_time);
+    bool LoadAnimationClip(PlayerAnimationClip& clip, const std::string& texture_path, float frame_duration, bool loop);
+    void UnloadAnimationClip(PlayerAnimationClip& clip);
+
+public:
     // Player movement properties
     Vector2 position;
     Vector2 velocity;
@@ -150,12 +191,26 @@ public:
 
     void Draw();
 
+    void SetAnimation(PlayerAnimationType type);
+
     void SetState(PlayerState* state);
 
     PlayerState* GetCurrentState();
 
     void LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey grab, KeyboardKey up, 
                       KeyboardKey down, KeyboardKey left, KeyboardKey right);
+
+    bool LoadAnimations(
+        const std::string& idle_path = "assets/player/PlayerAnimations/idle.png",
+        const std::string& run_path = "assets/player/PlayerAnimations/run.png",
+        const std::string& jump_path = "assets/player/PlayerAnimations/jump.png",
+        const std::string& fall_path = "assets/player/PlayerAnimations/fall.png",
+        const std::string& fall_pose_path = "assets/player/PlayerAnimations/fall_pose.png",
+        const std::string& dash_path = "assets/player/PlayerAnimations/dash.png",
+        const std::string& death_path = "assets/player/PlayerAnimations/death.png"
+    );
+    
+    void UnloadAnimations();
 
     void SetGrid(Grid* grid) { this->grid = grid; }
     Grid* GetGrid() { return grid; }

@@ -17,8 +17,8 @@ const float SCREEN_TRANSITION_DURATION = 0.5f;
 
 const std::string SETTINGS_FILEPATH = "settings.ini";
 
-const float PLAYER_WIDTH = 50.0f;
-const float PLAYER_HEIGHT = 50.0f;
+const float PLAYER_WIDTH = 20.0f;
+const float PLAYER_HEIGHT = 40.0f;
 const float PLAYER_SPEED = 400.0f;
 const float PLAYER_MASS = 1.0f;
 
@@ -56,18 +56,30 @@ int main() {
 
 
     // Init Player
-    Player player = Player(center, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_SPEED, PLAYER_MASS);
+    Player player = Player(settings.tilemap.screens[0].checkpoint_position, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_SPEED, PLAYER_MASS);
     player.SetState(&player.airborne);
     player.LoadKeybinds(settings.keybinds.jump, settings.keybinds.dash, settings.keybinds.grab,
                         settings.keybinds.up, settings.keybinds.down,
                         settings.keybinds.left, settings.keybinds.right);
+
+    if (!player.LoadAnimations(
+        settings.player_animations.idle,
+        settings.player_animations.run,
+        settings.player_animations.jump,
+        settings.player_animations.fall,
+        settings.player_animations.fall_pose,
+        settings.player_animations.dash,
+        settings.player_animations.death
+    )) {
+        std::cerr << "Player animations failed to load. Using fallback rectangle." << std::endl;
+    }
     
     player.sound_jump = &sound_jump;
     player.sound_dash = &sound_dash;
     player.sound_death = &sound_death;
     
     // Play background music (loop)
-    SetMusicVolume(music_bgm, 0.5f);
+    SetMusicVolume(music_bgm, 0.2f);
     PlayMusicStream(music_bgm);
 
     // Init Camera
@@ -175,6 +187,7 @@ int main() {
 
     UnloadTexture(tilemap);
     UnloadTexture(background);
+    player.UnloadAnimations();
     UnloadSound(sound_jump);
     UnloadSound(sound_dash);
     UnloadSound(sound_death);

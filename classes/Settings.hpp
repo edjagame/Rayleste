@@ -31,10 +31,21 @@ struct SoundSettings {
     std::string bgm = "assets/sounds/bgm.wav";
 };
 
+struct PlayerAnimationSettings {
+    std::string idle = "assets/player/PlayerAnimations/idle.png";
+    std::string run = "assets/player/PlayerAnimations/run.png";
+    std::string jump = "assets/player/PlayerAnimations/jump.png";
+    std::string fall = "assets/player/PlayerAnimations/fall.png";
+    std::string fall_pose = "assets/player/PlayerAnimations/fall_pose.png";
+    std::string dash = "assets/player/PlayerAnimations/dash.png";
+    std::string death = "assets/player/PlayerAnimations/death.png";
+};
+
 struct Settings {
     TilemapSettings tilemap;
     KeybindSettings keybinds;
     SoundSettings sounds;
+    PlayerAnimationSettings player_animations;
 };
 
 Settings LoadSettings(const std::string& filepath = "settings.json");

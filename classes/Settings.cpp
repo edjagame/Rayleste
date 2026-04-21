@@ -137,5 +137,17 @@ Settings LoadSettings(const std::string& filepath) {
         if (json_sounds.contains("bgm")) settings.sounds.bgm = json_sounds["bgm"].get<std::string>();
     }
 
+    // Load player animations
+    if (json_root.contains("player_animations")) {
+        json json_player_animations = json_root["player_animations"];
+        if (json_player_animations.contains("idle")) settings.player_animations.idle = json_player_animations["idle"].get<std::string>();
+        if (json_player_animations.contains("run")) settings.player_animations.run = json_player_animations["run"].get<std::string>();
+        if (json_player_animations.contains("jump")) settings.player_animations.jump = json_player_animations["jump"].get<std::string>();
+        if (json_player_animations.contains("fall")) settings.player_animations.fall = json_player_animations["fall"].get<std::string>();
+        if (json_player_animations.contains("fall_pose")) settings.player_animations.fall_pose = json_player_animations["fall_pose"].get<std::string>();
+        if (json_player_animations.contains("dash")) settings.player_animations.dash = json_player_animations["dash"].get<std::string>();
+        if (json_player_animations.contains("death")) settings.player_animations.death = json_player_animations["death"].get<std::string>();
+    }
+
     return settings;
 }

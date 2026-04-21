@@ -27,7 +27,7 @@
 #include "Grid.hpp"
 
 #define GRAVITY 4000.0f
-#define JUMP_MULTIPLIER 2.0f
+#define JUMP_MULTIPLIER 3.0f
 
 #define DASH_MULTIPLIER 3.0f
 #define DASH_DURATION 0.2f
@@ -36,6 +36,7 @@
 
 #define WALL_CLIMB_SPEED 180.0f
 #define WALL_GRAB_DURATION 2.0f
+#define WALL_JUMP_PENALTY 0.8f
 #define WALL_JUMP_HORIZONTAL_MULTIPLIER 3.0f
 #define WALL_JUMP_COOLDOWN 0.1f
 

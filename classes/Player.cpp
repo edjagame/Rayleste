@@ -19,9 +19,14 @@
 #include <string>
 #include "Player.hpp"
 
-const Color PLAYER_COLOR = {200, 0, 0, 255};
-const Color DASHLESS_COLOR = {0, 200, 200, 255};
+const Color PLAYER_COLOR = {255, 255, 255, 255};
+const Color DASH_COLOR = {0, 200, 0, 255};
+const Color DASHLESS_COLOR = {200, 0, 0, 255};
 const Color DEAD_COLOR = {0, 0, 0, 255};
+
+static void DrawPlayerStatusBar(const Player& player);
+
+
 
 /**************************************************
  *            GLOBAL PLAYER FUNCTIONS             *
@@ -84,6 +89,7 @@ void Player::Draw() {
     };
 
     DrawTexturePro(clip->texture, source, destination, {0.0f, 0.0f}, 0.0f, color);
+    DrawPlayerStatusBar(*this);
 }
 
 // Called within the state machine to change the current animation based on Player State
@@ -179,13 +185,13 @@ bool Player::LoadAnimations(
 
     // Makes sure all animations load successfully
     bool success = true;
-    success = success && LoadAnimationClip(idle_animation, idle_path, 0.08f, true);
-    success = success && LoadAnimationClip(run_animation, run_path, 0.06f, true);
-    success = success && LoadAnimationClip(jump_animation, jump_path, 0.08f, false);
-    success = success && LoadAnimationClip(fall_animation, fall_path, 0.08f, true);
-    success = success && LoadAnimationClip(fall_pose_animation, fall_pose_path, 0.08f, true);
+    success = success && LoadAnimationClip(idle_animation, idle_path, 0.5f, true);
+    success = success && LoadAnimationClip(run_animation, run_path, 0.1f, true);
+    success = success && LoadAnimationClip(jump_animation, jump_path, 0.1f, false);
+    success = success && LoadAnimationClip(fall_animation, fall_path, 0.1f, true);
+    success = success && LoadAnimationClip(fall_pose_animation, fall_pose_path, 0.1f, true);
     success = success && LoadAnimationClip(dash_animation, dash_path, 0.05f, false);
-    success = success && LoadAnimationClip(death_animation, death_path, 0.10f, false);
+    success = success && LoadAnimationClip(death_animation, death_path, 0.2f, false);
 
     if (!success) {
         UnloadAnimations();
@@ -311,7 +317,6 @@ void Player::LoadKeybinds(KeyboardKey jump, KeyboardKey dash, KeyboardKey grab, 
  *              ENTER STATE FUNCTIONS             *
  **************************************************/
 void PlayerGrounded::Enter() {
-    player->color = PLAYER_COLOR;
     player->can_wall_grab = true;
     player->wall_grab_timer = 0.0f;
     player->SetAnimation(Player::PlayerAnimationType::FALL_POSE);
@@ -326,7 +331,7 @@ void PlayerDashing::Enter() {
     player->velocity = {0.0f, 0.0f};
     player->PlayDashSound();
     
-    // Determine dash direction once at the start
+    // Determine dash direction at the start
     bool up_key_pressed = IsKeyDown(player->UP_KEY);
     bool down_key_pressed = IsKeyDown(player->DOWN_KEY);
     bool left_key_pressed = IsKeyDown(player->LEFT_KEY);
@@ -351,7 +356,6 @@ void PlayerDashing::Enter() {
     
     // Normalize and store
     player->dash_direction = Vector2Normalize(dash_direction);
-    player->color = DASHLESS_COLOR;
     player->SetAnimation(Player::PlayerAnimationType::DASH);
 }
 
@@ -362,7 +366,6 @@ void PlayerWallClimbing::Enter() {
 
 void PlayerDead::Enter() {
     player->respawn_timer = 0.0f;
-    player->color = DEAD_COLOR;
     player->velocity = {0.0f, 0.0f};
     player->PlayDeathSound();
     player->SetAnimation(Player::PlayerAnimationType::DEATH);
@@ -410,7 +413,7 @@ void PlayerGrounded::Update(float delta_time) {
     }
 
     // On jump, set to airborne
-    if (IsKeyDown(player->JUMP_KEY)) {
+    if (IsKeyPressed(player->JUMP_KEY)) {
         player->velocity.y = -player->speed * JUMP_MULTIPLIER;
         player->PlayJumpSound();
         player->SetState(&player->airborne);
@@ -419,7 +422,7 @@ void PlayerGrounded::Update(float delta_time) {
 
     // Check for wall grab input and if player is adjacent to a wall
     bool on_wall = player->IsAdjacentToLeftWall() || player->IsAdjacentToRightWall();
-    if (IsKeyDown(player->GRAB_KEY) && on_wall) {
+    if (IsKeyDown(player->GRAB_KEY) && on_wall && player->can_wall_grab) {
         player->SetState(&player->wall_climbing);
         return;
     }
@@ -445,6 +448,8 @@ void PlayerAirborne::Update(float delta_time) {
         } else if (IsKeyDown(player->LEFT_KEY)) {
             player->velocity.x = -player->speed;
             player->is_facing_right = false;
+        } else {
+            player->velocity.x = 0.0f;
         }
     }
     
@@ -478,7 +483,7 @@ void PlayerAirborne::Update(float delta_time) {
     bool on_left_wall = player->IsAdjacentToLeftWall();
     bool on_right_wall = player->IsAdjacentToRightWall();
     bool on_wall = on_left_wall || on_right_wall;
-    if (on_wall && IsKeyDown(player->GRAB_KEY)) {
+    if (on_wall && IsKeyDown(player->GRAB_KEY) && player->can_wall_grab && player->wall_jump_cooldown_timer <= 0.0f) {
         player->SetState(&player->wall_climbing);
         return;
     }
@@ -529,6 +534,8 @@ void PlayerWallClimbing::Update(float delta_time) {
     bool on_right_wall = player->IsAdjacentToRightWall();
     bool on_wall = on_left_wall || on_right_wall;
 
+    player->position.x = round(player->position.x);
+
     player->wall_grab_timer += delta_time;
     player->can_wall_grab = player->wall_grab_timer < WALL_GRAB_DURATION;
 
@@ -557,6 +564,11 @@ void PlayerWallClimbing::Update(float delta_time) {
         }
 
         player->velocity.y = -player->speed * JUMP_MULTIPLIER;
+
+        // decreases wall grab timer whenever wall jumping
+        player->wall_grab_timer = Clamp(player->wall_grab_timer + WALL_JUMP_PENALTY, 0.0f, WALL_GRAB_DURATION);
+        player->can_wall_grab = player->wall_grab_timer < WALL_GRAB_DURATION;   
+
         player->PlayJumpSound();
         player->wall_jump_cooldown_timer = WALL_JUMP_COOLDOWN;
         player->SetState(&player->airborne);
@@ -607,7 +619,7 @@ void PlayerDead::Update(float delta_time) {
  *             OTHER PLAYER FUNCTIONS             *
  **************************************************/
 
-float padding = 3.0f; 
+float padding = 2.0f; 
 
 TileType Player::FloorType() {
     Vector2 feet_left = { position.x + padding, position.y + height };
@@ -637,23 +649,43 @@ TileType Player::CeilingType() {
     return GetGrid()->GetTileType(head_center);
 }
 
+const float wall_check_offset = 2.0f;
+
 TileType Player::LeftWallType() {
-    Vector2 left_position = { position.x + 1, position.y + height / 2.0f };
-    return GetGrid()->GetTileType(left_position);
+    Vector2 left_top = { position.x + wall_check_offset, position.y + padding };
+    Vector2 left_middle = { position.x + wall_check_offset, position.y + height / 2.0f };
+    Vector2 left_bottom = { position.x + wall_check_offset, position.y + height - padding };
+    
+    if (GetGrid()->GetTileType(left_top) == TileType::SOLID ||
+        GetGrid()->GetTileType(left_middle) == TileType::SOLID ||
+        GetGrid()->GetTileType(left_bottom) == TileType::SOLID) {
+        return TileType::SOLID;
+    }
+    
+    return GetGrid()->GetTileType(left_middle);
 }
 
 TileType Player::RightWallType() {
-    Vector2 right_position = { position.x + width - 1, position.y + height / 2.0f };
-    return GetGrid()->GetTileType(right_position);
+    Vector2 right_top = { position.x + width - wall_check_offset, position.y + padding };
+    Vector2 right_middle = { position.x + width - wall_check_offset, position.y + height / 2.0f };
+    Vector2 right_bottom = { position.x + width - wall_check_offset, position.y + height - padding };
+    
+    if (GetGrid()->GetTileType(right_top) == TileType::SOLID ||
+        GetGrid()->GetTileType(right_middle) == TileType::SOLID ||
+        GetGrid()->GetTileType(right_bottom) == TileType::SOLID) {
+        return TileType::SOLID;
+    }
+    
+    return GetGrid()->GetTileType(right_middle);
 }
 
 bool Player::IsAdjacentToLeftWall() {
-    Vector2 left_position = { position.x - 1, position.y + height / 2.0f };
+    Vector2 left_position = { position.x - wall_check_offset, position.y + height / 2.0f };
     return GetGrid()->GetTileType(left_position) == TileType::SOLID;
 }
 
 bool Player::IsAdjacentToRightWall() {
-    Vector2 right_position = { position.x + width + 1, position.y + height / 2.0f };
+    Vector2 right_position = { position.x + width + wall_check_offset, position.y + height / 2.0f };
     return GetGrid()->GetTileType(right_position) == TileType::SOLID;
 }
 
@@ -677,4 +709,23 @@ void Player::PlayDeathSound() {
     if (sound_death != nullptr && !IsSoundPlaying(*sound_death)) {
         PlaySound(*sound_death);
     }
+}
+
+static void DrawPlayerStatusBar(const Player& player) {
+    float bar_width = player.width;
+    float bar_height = 5.0f;
+    float bar_x = player.position.x;
+    float bar_y = player.position.y - 10.0f;
+    float wall_grab_ratio = Clamp((WALL_GRAB_DURATION - player.wall_grab_timer) / WALL_GRAB_DURATION, 0.0f, 1.0f);
+    Color bar_color = player.has_dashed ? DASHLESS_COLOR : DASH_COLOR;
+    Color background_color = {
+        static_cast<unsigned char>(bar_color.r * 0.35f),
+        static_cast<unsigned char>(bar_color.g * 0.35f),
+        static_cast<unsigned char>(bar_color.b * 0.35f),
+        bar_color.a
+    };
+
+    //draws the background bar first then the foreground bar after
+    DrawRectangleRec({bar_x, bar_y, bar_width, bar_height}, background_color);
+    DrawRectangleRec({bar_x, bar_y, bar_width * wall_grab_ratio, bar_height}, bar_color);
 }

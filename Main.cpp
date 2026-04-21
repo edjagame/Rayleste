@@ -17,8 +17,8 @@ const float SCREEN_TRANSITION_DURATION = 0.5f;
 
 const std::string SETTINGS_FILEPATH = "settings.ini";
 
-const float PLAYER_WIDTH = 20.0f;
-const float PLAYER_HEIGHT = 40.0f;
+const float PLAYER_WIDTH = 40.0f;
+const float PLAYER_HEIGHT = 80.0f;
 const float PLAYER_SPEED = 400.0f;
 const float PLAYER_MASS = 1.0f;
 
@@ -163,6 +163,11 @@ int main() {
             else {
                 camera_view.target = camera_target_next;
                 camera_view.zoom = camera_zoom_next;
+                // when jumping up to a new screen give the player a lil boost
+                if (camera_target_next.y < camera_target_prev.y) {
+                    player.SetState(&player.airborne);
+                    player.velocity.y = -1000.0f;
+                }
                 game_state = GAMEPLAY;
             }
         }

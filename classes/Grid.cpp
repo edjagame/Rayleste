@@ -73,6 +73,45 @@ TileType Grid::GetTileType(Vector2 position) {
     return TileType::FLOOR;
 }
 
+void Grid::SetTileId(Vector2 position, int tile_id) {
+    const int screen_index = GetScreenIndex(position);
+    if (screen_index < 0) {
+        return;
+    }
+
+    Screen& screen = screens[screen_index];
+    const int screen_cols = static_cast<int>(screen.dimensions_tiles.x);
+    const int screen_rows = static_cast<int>(screen.dimensions_tiles.y);
+
+    if (screen_cols <= 0 || screen_rows <= 0) {
+        return;
+    }
+
+    const int col = static_cast<int>((position.x - screen.world_position.x) / tile_size_grid.x);
+    const int row = static_cast<int>((position.y - screen.world_position.y) / tile_size_grid.y);
+    if (col < 0 || col >= screen_cols || row < 0 || row >= screen_rows) {
+        return;
+    }
+
+    const int index = row * screen_cols + col;
+    if (index < 0 || index >= static_cast<int>(screen.tile_data.size())) {
+        return;
+    }
+
+    screen.tile_data[index] = tile_id;
+}
+
+void Grid::ResetTiles() {
+    const int screen_count = screens.size();
+    const int initial_screen_count = initial_screens.size();
+
+    for (int screen_index = 0; screen_index < screen_count && screen_index < initial_screen_count; screen_index++) {
+        Screen& current_screen = screens[screen_index];
+        const Screen& initial_screen = initial_screens[screen_index];
+        current_screen.tile_data = initial_screen.tile_data;
+    }
+}
+
 int Grid::GetScreenIndex(Vector2 position) const {
     // Brute force searching through screens
     for (int index = 0; index < screens.size(); index++) {

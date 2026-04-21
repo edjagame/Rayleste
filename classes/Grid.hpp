@@ -8,6 +8,7 @@ enum TileType {
     FLOOR = 0,
     SOLID = 1,
     SPIKE = 2,
+    DASH_REFILL = 3
 };
 
 struct Tile {
@@ -28,6 +29,7 @@ class Grid {
 public:
     std::vector<Tile> tiles;
     std::vector<Screen> screens;
+    std::vector<Screen> initial_screens;
     Vector2 tile_size_grid;   // rendered size of each tile in pixels
     Vector2 tile_size_spritesheet; // pixel size of each tile in the spritesheet
     Texture2D tilemap;
@@ -41,6 +43,7 @@ public:
         this->tiles = tiles;
         this->tile_size_spritesheet = tile_size_spritesheet;
         this->screens = screens;
+        this->initial_screens = screens;
 
         InitTileSize();
     }
@@ -48,6 +51,8 @@ public:
     void InitTileSize();
     void DrawGrid();
     TileType GetTileType(Vector2 position);
+    void SetTileId(Vector2 position, int tile_id);
+    void ResetTiles();
     int GetScreenIndex(Vector2 position) const;
     Vector2 GetScreenCenter(int screen_index) const;
     Vector2 GetScreenDimensions(int screen_index) const;

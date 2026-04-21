@@ -134,6 +134,7 @@ int main() {
             };
             int new_screen_index = grid.GetScreenIndex(player_center);
             if (new_screen_index >= 0 && new_screen_index != current_screen_index) {
+                grid.ResetTiles();
                 // get new screen center
                 current_screen_index = new_screen_index;
                 player.current_respawn_point = grid.GetScreenCheckpoint(current_screen_index);

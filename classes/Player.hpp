@@ -31,7 +31,7 @@
 
 #define DASH_MULTIPLIER 3.0f
 #define DASH_DURATION 0.2f
-#define DASH_COOLDOWN 0.3f
+#define DASH_COOLDOWN 0.2f
 #define RESPAWN_TIME 1.0f
 
 #define WALL_CLIMB_SPEED 180.0f
@@ -219,14 +219,17 @@ public:
 
     // Movement and collision
     Vector2 StepwiseMove(Vector2 movement);
+    Vector2 GetCenterPosition() const;
     
     // Collision checks
+    TileType CenterTileType();
     TileType FloorType();
     TileType CeilingType();
     TileType LeftWallType();
     TileType RightWallType();
     bool IsAdjacentToLeftWall();
     bool IsAdjacentToRightWall();
+    void TryConsumeDashRefill();
 
     // Sound effects
     void PlayJumpSound();

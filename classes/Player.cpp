@@ -41,6 +41,7 @@ void Player::Update(float delta_time) {
     }
     
     current_state->Update(delta_time);
+    TryConsumeDashRefill();
 
     if (current_state != &dead && (FloorType() == TileType::SPIKE ||
         CeilingType() == TileType::SPIKE || 
@@ -534,8 +535,6 @@ void PlayerWallClimbing::Update(float delta_time) {
     bool on_right_wall = player->IsAdjacentToRightWall();
     bool on_wall = on_left_wall || on_right_wall;
 
-    player->position.x = round(player->position.x);
-
     player->wall_grab_timer += delta_time;
     player->can_wall_grab = player->wall_grab_timer < WALL_GRAB_DURATION;
 
@@ -608,6 +607,9 @@ void PlayerWallClimbing::Update(float delta_time) {
 void PlayerDead::Update(float delta_time) {
     player->respawn_timer += delta_time;
     if (player->respawn_timer >= player->respawn_time) { 
+        if (player->GetGrid() != nullptr) {
+            player->GetGrid()->ResetTiles();
+        }
         player->position = player->current_respawn_point;
         player->velocity = {0.0f, 0.0f};
         player->SetState(&player->airborne);
@@ -619,7 +621,33 @@ void PlayerDead::Update(float delta_time) {
  *             OTHER PLAYER FUNCTIONS             *
  **************************************************/
 
-float padding = 2.0f; 
+float padding = 3.0f; 
+
+Vector2 Player::GetCenterPosition() const {
+    return {
+        position.x + width / 2.0f,
+        position.y + height / 2.0f
+    };
+}
+
+TileType Player::CenterTileType() {
+    return GetGrid()->GetTileType(GetCenterPosition());
+}
+
+void Player::TryConsumeDashRefill() {
+    if (!has_dashed) {
+        return;
+    }
+
+    const Vector2 center = GetCenterPosition();
+    
+    if (GetGrid()->GetTileType(center) != TileType::DASH_REFILL) {
+        return;
+    }
+
+    has_dashed = false;
+    GetGrid()->SetTileId(center, 0);
+}
 
 TileType Player::FloorType() {
     Vector2 feet_left = { position.x + padding, position.y + height };
@@ -680,13 +708,23 @@ TileType Player::RightWallType() {
 }
 
 bool Player::IsAdjacentToLeftWall() {
-    Vector2 left_position = { position.x - wall_check_offset, position.y + height / 2.0f };
-    return GetGrid()->GetTileType(left_position) == TileType::SOLID;
+    Vector2 left_top = { position.x - wall_check_offset, position.y + padding };
+    Vector2 left_middle = { position.x - wall_check_offset, position.y + height / 2.0f };
+    Vector2 left_bottom = { position.x - wall_check_offset, position.y + height - padding };
+    
+    return GetGrid()->GetTileType(left_top) == TileType::SOLID ||
+           GetGrid()->GetTileType(left_middle) == TileType::SOLID ||
+           GetGrid()->GetTileType(left_bottom) == TileType::SOLID;
 }
 
 bool Player::IsAdjacentToRightWall() {
-    Vector2 right_position = { position.x + width + wall_check_offset, position.y + height / 2.0f };
-    return GetGrid()->GetTileType(right_position) == TileType::SOLID;
+    Vector2 right_top = { position.x + width + wall_check_offset, position.y + padding };
+    Vector2 right_middle = { position.x + width + wall_check_offset, position.y + height / 2.0f };
+    Vector2 right_bottom = { position.x + width + wall_check_offset, position.y + height - padding };
+    
+    return GetGrid()->GetTileType(right_top) == TileType::SOLID ||
+           GetGrid()->GetTileType(right_middle) == TileType::SOLID ||
+           GetGrid()->GetTileType(right_bottom) == TileType::SOLID;
 }
 
 /**************************************************

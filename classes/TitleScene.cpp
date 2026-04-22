@@ -2,20 +2,19 @@
 
 void TitleScene::Begin() {
     // Load Sound
-    music_bgm = LoadMusicStream("assets/sounds/title_bgm.mp3");
+    music_bgm = ResourceManager::GetInstance()->GetMusic("assets/sounds/title_bgm.mp3");
     
     // Play background music (loop)
     SetMusicVolume(music_bgm, 0.2f);
     PlayMusicStream(music_bgm);
 
     //Init Background
-    rayleste_bg = LoadTexture("assets/rayleste-bg.png");
+    rayleste_bg = ResourceManager::GetInstance()->GetTexture("assets/rayleste-bg.png");
     SetTextureWrap(rayleste_bg, TEXTURE_WRAP_REPEAT);
 }
 
 void TitleScene::End() {
-    UnloadTexture(rayleste_bg);
-    UnloadMusicStream(music_bgm);
+    StopMusicStream(music_bgm);
 }
 
 void TitleScene::Update() {
@@ -48,6 +47,6 @@ void TitleScene::Draw() {
         }
     }
     if(uiLibrary.Button(3, "EXIT GAME", {100, 475, 300, 50})) {
-        CloseWindow();
+        GetSceneManager()->should_exit = true;
     }
 }

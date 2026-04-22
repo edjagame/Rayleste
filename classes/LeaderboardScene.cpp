@@ -123,7 +123,7 @@ void LeaderboardScene::Draw() {
         }
     }
     if(uiLibrary.Button(2, "EXIT GAME", {950, 600, 300, 50})) {
-        CloseWindow();
+            GetSceneManager()->should_exit = true;
     }
 }
 

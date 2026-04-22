@@ -56,9 +56,12 @@ class SceneManager {
     Scene* active_scene = nullptr;
 
     RunStats run_stats;
+    
+    
 
 public:
     bool use_saved_checkpoint = false;
+    bool should_exit = false;
     
     // Adds the specified scene to the scene manager, and assigns it
     // to the specified scene ID

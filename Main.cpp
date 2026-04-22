@@ -44,9 +44,9 @@ int main() {
     scene_manager.RegisterScene(&win_scene, 2);
     scene_manager.RegisterScene(&leaderboard_scene, 3);
 
-    scene_manager.SwitchScene(1);
+    scene_manager.SwitchScene(0);
 
-    while(!WindowShouldClose()) {
+    while(!WindowShouldClose() && !scene_manager.should_exit) {
         Scene* active_scene = scene_manager.GetActiveScene();
 
         BeginDrawing();

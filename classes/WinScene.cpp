@@ -29,6 +29,11 @@ void WinScene::End() {
 void WinScene::Update() {
     UpdateMusicStream(music_win);
     rainbow_accumulator += GetFrameTime();
+    if (IsKeyPressed(KEY_ENTER)) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(3);
+        }
+    }
 }
 
 void WinScene::Draw() {

@@ -414,8 +414,9 @@ void PlayerGrounded::Update(float delta_time) {
     }
 
     // Get to dashing
-    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
+    if (IsKeyPressed(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
+        player->has_dashed = true;
         return;
     }
     
@@ -440,7 +441,7 @@ void PlayerAirborne::Update(float delta_time) {
     }
     
     // Check for dash input
-    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
+    if (IsKeyPressed(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
         player->has_dashed = true;
         return;
@@ -565,7 +566,7 @@ void PlayerWallClimbing::Update(float delta_time) {
         return;
     }
     
-    if (IsKeyDown(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
+    if (IsKeyPressed(player->DASH_KEY) && !player->has_dashed && player->dash_cooldown_timer <= 0.0f) {
         player->SetState(&player->dashing);
         player->has_dashed = true;
         return;

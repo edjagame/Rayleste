@@ -11,6 +11,10 @@ void TitleScene::Begin() {
     //Init Background
     rayleste_bg = LoadTexture("assets/rayleste-bg.png");
     SetTextureWrap(rayleste_bg, TEXTURE_WRAP_REPEAT);
+
+    // uiLibrary.Button(0, "NEW GAME", {100, 325, 200, 50});
+    // uiLibrary.Button(1, "CONTINUE GAME", {100, 375, 200, 50});
+    // uiLibrary.Button(2, "EXIT GAME", {100, 425, 200, 50});
 }
 
 void TitleScene::End() {
@@ -30,7 +34,17 @@ void TitleScene::Update() {
 
 void TitleScene::Draw() {
     DrawTexture(rayleste_bg, 0, 0 , WHITE);
-    DrawText("New Game", 100, 325, 30, WHITE);
-    DrawText("Continue Game", 100, 375, 30, WHITE);
-    DrawText("Exit Game", 100, 425, 30, WHITE);
+    if(uiLibrary.Button(0, "NEW GAME", {100, 325, 300, 50})) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(1);
+        }   
+    }
+    if(uiLibrary.Button(1, "CONTINUE GAME", {100, 375, 300, 50})) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(1);
+        }
+    }
+    if(uiLibrary.Button(2, "EXIT GAME", {100, 425, 300, 50})) {
+        CloseWindow();
+    }
 }

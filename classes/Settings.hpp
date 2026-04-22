@@ -28,7 +28,8 @@ struct SoundSettings {
     std::string jump = "assets/sounds/jump.wav";
     std::string dash = "assets/sounds/dash.wav";
     std::string death = "assets/sounds/death.wav";
-    std::string bgm = "assets/sounds/bgm.wav";
+    std::string bgm = "assets/sounds/bgm.mp3";
+    std::string win_music = "assets/sounds/win_music.mp3";
 };
 
 struct PlayerAnimationSettings {
@@ -41,11 +42,16 @@ struct PlayerAnimationSettings {
     std::string death = "assets/player/PlayerAnimations/death.png";
 };
 
+struct TextureSettings {
+    std::string background = "assets/bg.png";
+};
+
 struct Settings {
     TilemapSettings tilemap;
     KeybindSettings keybinds;
     SoundSettings sounds;
     PlayerAnimationSettings player_animations;
+    TextureSettings textures;
 };
 
 Settings LoadSettings(const std::string& filepath = "settings.json");

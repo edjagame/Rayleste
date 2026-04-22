@@ -6,10 +6,12 @@
 
 #include "classes/SceneManager.hpp"
 #include "classes/GameScene.hpp"
+#include "classes/WinScene.hpp"
 #include "classes/Grid.cpp"
 #include "classes/Player.cpp"
 #include "classes/Settings.cpp"
 #include "classes/GameScene.cpp"
+#include "classes/WinScene.cpp"
 
 const int FPS = 60;
 
@@ -23,10 +25,13 @@ int main() {
     SceneManager scene_manager;
 
     GameScene game_scene;
+    WinScene win_scene;
     
     game_scene.SetSceneManager(&scene_manager);
+    win_scene.SetSceneManager(&scene_manager);
 
     scene_manager.RegisterScene(&game_scene, 1);
+    scene_manager.RegisterScene(&win_scene, 2);
 
     scene_manager.SwitchScene(1);
 

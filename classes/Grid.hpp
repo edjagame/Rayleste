@@ -8,7 +8,8 @@ enum TileType {
     FLOOR = 0,
     SOLID = 1,
     SPIKE = 2,
-    DASH_REFILL = 3
+    DASH_REFILL = 3,
+    WIN_CRYSTAL = 4,
 };
 
 struct Tile {

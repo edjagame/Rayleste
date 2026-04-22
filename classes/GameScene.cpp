@@ -83,7 +83,7 @@ void GameScene::Begin() {
     camera_view.zoom = 1.0f;
 
     // Init Background via shared resource manager
-    background = ResourceManager::GetInstance()->GetTexture("assets/bg.png");
+    background = ResourceManager::GetInstance()->GetTexture(settings.textures.background);
     SetTextureWrap(background, TEXTURE_WRAP_REPEAT);
 
     //Set references
@@ -111,6 +111,7 @@ void GameScene::Begin() {
 }
 
 void GameScene::End() {
+    player.UnloadAnimations();
     StopMusicStream(music_bgm);
 }
 
@@ -123,6 +124,13 @@ void GameScene::Update() {
 
     if (game_state == GAMEPLAY) {
         player.Update(deltaTime);
+
+        if (grid.GetTileType(player.GetCenterPosition()) == TileType::WIN_CRYSTAL) {
+            if (GetSceneManager() != nullptr) {
+                GetSceneManager()->SwitchScene(2);
+            }
+            return;
+        }
 
         // updates the camera to follow the player if they move to a new screen
         player_center = {

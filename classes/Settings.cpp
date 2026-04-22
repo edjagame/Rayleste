@@ -112,7 +112,7 @@ Settings LoadSettings(const std::string& filepath) {
     }
 
     if (!LoadTilemapSettings(json_root["tilemap"], settings.tilemap)) {
-        // return early if there is an error with the load tilemap settings function
+        std::cerr << "Failed to load tilemap settings: " << filepath << std::endl;
         return settings;
     }
 
@@ -135,6 +135,7 @@ Settings LoadSettings(const std::string& filepath) {
         if (json_sounds.contains("dash")) settings.sounds.dash = json_sounds["dash"].get<std::string>();
         if (json_sounds.contains("death")) settings.sounds.death = json_sounds["death"].get<std::string>();
         if (json_sounds.contains("bgm")) settings.sounds.bgm = json_sounds["bgm"].get<std::string>();
+        if (json_sounds.contains("win_music")) settings.sounds.win_music = json_sounds["win_music"].get<std::string>();
     }
 
     // Load player animations
@@ -147,6 +148,12 @@ Settings LoadSettings(const std::string& filepath) {
         if (json_player_animations.contains("fall_pose")) settings.player_animations.fall_pose = json_player_animations["fall_pose"].get<std::string>();
         if (json_player_animations.contains("dash")) settings.player_animations.dash = json_player_animations["dash"].get<std::string>();
         if (json_player_animations.contains("death")) settings.player_animations.death = json_player_animations["death"].get<std::string>();
+    }
+
+    // Load texture paths
+    if (json_root.contains("textures")) {
+        json json_textures = json_root["textures"];
+        if (json_textures.contains("background")) settings.textures.background = json_textures["background"].get<std::string>();
     }
 
     return settings;

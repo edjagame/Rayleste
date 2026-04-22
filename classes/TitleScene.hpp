@@ -2,6 +2,7 @@
 
 #include "Settings.hpp"
 #include "SceneManager.hpp"
+#include "immediate.cpp"
 
 class TitleScene : public Scene {
 
@@ -9,6 +10,8 @@ class TitleScene : public Scene {
         Settings settings;
         Music music_bgm;
         Texture2D rayleste_bg;
+        // new
+        UiLibrary uiLibrary;
 
         void Begin() override;
         void End() override;

@@ -3,6 +3,7 @@
 #include "SceneManager.hpp"
 #include "Settings.hpp"
 #include <string>
+#include "immediate.cpp"
 
 const std::string LEADERBOARD_FILEPATH = "rayleste_times.txt";
 
@@ -20,6 +21,7 @@ public:
     bool is_inputting_name = false;
     std::string player_name = ""; 
     float new_time = 0.0f;
+    UiLibrary uiLibrary;
 
     LeaderboardScene();
     

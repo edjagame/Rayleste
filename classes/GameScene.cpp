@@ -35,7 +35,6 @@ void GameScene::Begin() {
                         settings.tilemap.tile_size_grid, 
                         settings.tilemap.screens);
 
-
     const Vector2 spawn = settings.tilemap.screens[0].checkpoint_position;
     player.position = spawn;
     player.velocity = {0.0f, 0.0f};

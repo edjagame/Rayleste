@@ -74,4 +74,18 @@ void WinScene::Draw() {
     DrawText(time_text, GetCenteredTextX(time_text, stats_font_size), center.y + 150, stats_font_size, RAYWHITE);
     const char* death_text = TextFormat("Deaths: %i", final_death_count);
     DrawText(death_text, GetCenteredTextX(death_text, stats_font_size), center.y + 200, stats_font_size, RAYWHITE);
+
+    if(uiLibrary.Button(0, "TITLE SCREEN", {100, 600, 300, 50})) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(0);
+        }   
+    }
+    if(uiLibrary.Button(1, "LEADERBOARD", {550, 600, 300, 50})) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(3);
+        }
+    }
+    if(uiLibrary.Button(2, "EXIT GAME", {950, 600, 300, 50})) {
+        CloseWindow();
+    }
 }

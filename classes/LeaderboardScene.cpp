@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 
+
 LeaderboardScene::LeaderboardScene() {
 }
 
@@ -108,7 +109,21 @@ void LeaderboardScene::Draw() {
             std::string time_text = TextFormat("%02i:%05.2f", minutes, seconds);
             std::string entry = score_entries[i].name + ": " + time_text;
             DrawText(entry.c_str(), center.x - 100, center.y + 100 + i * 40, 30, WHITE);
+        }
     }
+
+    if(uiLibrary.Button(0, "TITLE SCREEN", {100, 600, 300, 50})) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(0);
+        }   
+    }
+    if(uiLibrary.Button(1, "NEW GAME", {550, 600, 300, 50})) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(1);
+        }
+    }
+    if(uiLibrary.Button(2, "EXIT GAME", {950, 600, 300, 50})) {
+            GetSceneManager()->should_exit = true;
     }
 }
 

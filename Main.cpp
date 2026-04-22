@@ -49,6 +49,10 @@ int main() {
         active_scene->End();
     }
 
+    ResourceManager::GetInstance()->UnloadAllMusic();
+    ResourceManager::GetInstance()->UnloadAllSounds();
+    ResourceManager::GetInstance()->UnloadAllTextures();
+
     CloseAudioDevice();
     CloseWindow();
 

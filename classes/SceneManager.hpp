@@ -92,6 +92,8 @@ public:
 // Resource manager implemented as a singleton
 class ResourceManager {
     std::unordered_map<std::string, Texture> textures;
+    std::unordered_map<std::string, Sound> sounds;
+    std::unordered_map<std::string, Music> music_streams;
 
     ResourceManager() {}
 
@@ -120,6 +122,30 @@ public:
         return textures[path];
     }
 
+    Sound GetSound(const std::string& path) {
+        if (sounds.find(path) == sounds.end()) {
+            std::cout << "Loaded " << path << " from Disk" << std::endl;
+            sounds[path] = LoadSound(path.c_str());
+        }
+        else {
+            std::cout << "Resource Already Loaded" << std::endl;
+        }
+
+        return sounds[path];
+    }
+
+    Music GetMusic(const std::string& path) {
+        if (music_streams.find(path) == music_streams.end()) {
+            std::cout << "Loaded " << path << " from Disk" << std::endl;
+            music_streams[path] = LoadMusicStream(path.c_str());
+        }
+        else {
+            std::cout << "Resource Already Loaded" << std::endl;
+        }
+
+        return music_streams[path];
+    }
+
     // Used for unloading all the textures when the game is closed.
     void UnloadAllTextures() {
         for (auto it : textures) {
@@ -127,6 +153,23 @@ public:
         }
 
         textures.clear();
+    }
+
+    void UnloadAllSounds() {
+        for (auto it : sounds) {
+            UnloadSound(it.second);
+        }
+
+        sounds.clear();
+    }
+
+    void UnloadAllMusic() {
+        for (auto it : music_streams) {
+            StopMusicStream(it.second);
+            UnloadMusicStream(it.second);
+        }
+
+        music_streams.clear();
     }
 };
 

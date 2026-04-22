@@ -19,14 +19,14 @@ void GameScene::Begin() {
     // Init Settings
     settings = LoadSettings(SETTINGS_FILEPATH);
     
-    // Load Sounds
-    sound_jump = LoadSound(settings.sounds.jump.c_str());
-    sound_dash = LoadSound(settings.sounds.dash.c_str());
-    sound_death = LoadSound(settings.sounds.death.c_str());
-    music_bgm = LoadMusicStream(settings.sounds.bgm.c_str());
+    // Load sounds and music via shared resource manager
+    sound_jump = ResourceManager::GetInstance()->GetSound(settings.sounds.jump);
+    sound_dash = ResourceManager::GetInstance()->GetSound(settings.sounds.dash);
+    sound_death = ResourceManager::GetInstance()->GetSound(settings.sounds.death);
+    music_bgm = ResourceManager::GetInstance()->GetMusic(settings.sounds.bgm);
     
-    // Init Tile Texture
-    tilemap = LoadTexture(settings.tilemap.image_filename.c_str());
+    // Init Tile Texture via shared resource manager
+    tilemap = ResourceManager::GetInstance()->GetTexture(settings.tilemap.image_filename);
 
     // Init Grid
     grid = Grid(   tilemap, 
@@ -82,8 +82,8 @@ void GameScene::Begin() {
     camera_view.offset = {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera_view.zoom = 1.0f;
 
-    //Init Background
-    background = LoadTexture("assets/bg.png");
+    // Init Background via shared resource manager
+    background = ResourceManager::GetInstance()->GetTexture("assets/bg.png");
     SetTextureWrap(background, TEXTURE_WRAP_REPEAT);
 
     //Set references
@@ -111,13 +111,7 @@ void GameScene::Begin() {
 }
 
 void GameScene::End() {
-    UnloadTexture(tilemap);
-    UnloadTexture(background);
-    player.UnloadAnimations();
-    UnloadSound(sound_jump);
-    UnloadSound(sound_dash);
-    UnloadSound(sound_death);
-    UnloadMusicStream(music_bgm);
+    StopMusicStream(music_bgm);
 }
 
 void GameScene::Update() {

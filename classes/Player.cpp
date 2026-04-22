@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include "Player.hpp"
+#include "SceneManager.hpp"
 
 const Color PLAYER_COLOR = {255, 255, 255, 255};
 const Color DASH_COLOR = {0, 200, 0, 255};
@@ -132,7 +133,7 @@ void Player::UpdateAnimation(float delta_time) {
 }
 
 bool Player::LoadAnimationClip(PlayerAnimationClip& clip, const std::string& texture_path, float frame_duration, bool loop) {
-    clip.texture = LoadTexture(texture_path.c_str());
+    clip.texture = ResourceManager::GetInstance()->GetTexture(texture_path);
     if (clip.texture.id == 0) {
         std::cerr << "Failed to load player animation: " << texture_path << std::endl;
         return false;
@@ -150,7 +151,7 @@ bool Player::LoadAnimationClip(PlayerAnimationClip& clip, const std::string& tex
 }
 
 void Player::UnloadAnimationClip(PlayerAnimationClip& clip) {
-    UnloadTexture(clip.texture);
+    clip.texture = {0};
     clip.frame_count = 1;
     clip.frame_duration = 0.1f;
     clip.loop = true;

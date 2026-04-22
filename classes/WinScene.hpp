@@ -10,6 +10,8 @@ public:
     Music music_win;
 
     float rainbow_accumulator = 0.0f;
+    int final_death_count = 0;
+    float final_time_seconds = 0.0f;
 
     WinScene ();
     

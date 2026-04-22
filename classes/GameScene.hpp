@@ -46,6 +46,8 @@ class GameScene : public Scene {
         float screen_transition_timer;
         float camera_zoom_prev;
         float camera_zoom_next;
+        int death_count = 0;
+        float elapsed_time_seconds = 0.0f;
 
         GameState game_state;
 

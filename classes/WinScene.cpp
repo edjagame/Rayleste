@@ -4,10 +4,20 @@
 WinScene::WinScene() {
 }
 
+int GetCenteredTextX(const char* text, int font_size) {
+    return (GetScreenWidth() - MeasureText(text, font_size)) / 2;
+}
+
 void WinScene::Begin() {
     settings = LoadSettings("settings.ini");
     music_win = ResourceManager::GetInstance()->GetMusic(settings.sounds.win_music);
     rainbow_accumulator = 0.0f;
+
+    final_death_count = 0;
+    final_time_seconds = 0.0f;
+    final_death_count = GetSceneManager()->GetRunDeaths();
+    final_time_seconds = GetSceneManager()->GetRunCompletionTimeSeconds();
+
     SetMusicVolume(music_win, 0.2f);
     PlayMusicStream(music_win);
 }
@@ -50,4 +60,13 @@ void WinScene::Draw() {
                 font_size,
                 spacing,
                 rainbow_color);
+
+    int minutes = static_cast<int>(final_time_seconds) / 60;
+    float seconds = fmodf(final_time_seconds, 60.0f);
+
+    const int stats_font_size = 30;
+    const char* time_text = TextFormat("Time: %02i:%05.2f", minutes, seconds);
+    DrawText(time_text, GetCenteredTextX(time_text, stats_font_size), center.y + 150, stats_font_size, RAYWHITE);
+    const char* death_text = TextFormat("Deaths: %i", final_death_count);
+    DrawText(death_text, GetCenteredTextX(death_text, stats_font_size), center.y + 200, stats_font_size, RAYWHITE);
 }

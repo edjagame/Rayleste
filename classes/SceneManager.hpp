@@ -43,11 +43,18 @@ public:
 
 
 class SceneManager {
+    struct RunStats {
+        int deaths = 0;
+        float completion_time_seconds = 0.0f;
+    };
+
     // Mapping between a scene ID and a reference to the scene
     std::unordered_map<int, Scene*> scenes;
 
      // Current active scene
     Scene* active_scene = nullptr;
+
+    RunStats run_stats;
 
 public:
     // Adds the specified scene to the scene manager, and assigns it
@@ -86,6 +93,19 @@ public:
     // Gets the active scene
     Scene* GetActiveScene() {
         return active_scene;
+    }
+
+    void SetRunStats(int deaths, float completion_time_seconds) {
+        run_stats.deaths = deaths;
+        run_stats.completion_time_seconds = completion_time_seconds;
+    }
+
+    int GetRunDeaths() const {
+        return run_stats.deaths;
+    }
+
+    float GetRunCompletionTimeSeconds() const {
+        return run_stats.completion_time_seconds;
     }
 };
 

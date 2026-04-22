@@ -166,6 +166,7 @@ public:
     Vector2 current_respawn_point = {0.0f, 0.0f};
     float respawn_timer = 0.0f;
     float respawn_time = RESPAWN_TIME;
+    int* death_counter = nullptr;
 
     // Player states
     PlayerGrounded grounded;

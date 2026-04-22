@@ -106,6 +106,11 @@ void GameScene::Begin() {
     screen_transition_timer = 0.0f;
     camera_zoom_prev = camera_view.zoom;
     camera_zoom_next = camera_view.zoom;
+    death_count = 0;
+    elapsed_time_seconds = 0.0f;
+    player.death_counter = &death_count;
+
+    GetSceneManager()->SetRunStats(0, 0.0f);
 
     game_state = GAMEPLAY;
 }
@@ -121,12 +126,14 @@ void GameScene::Update() {
 
     // Update background music
     UpdateMusicStream(music_bgm);
+    elapsed_time_seconds += deltaTime;
 
     if (game_state == GAMEPLAY) {
         player.Update(deltaTime);
 
         if (grid.GetTileType(player.GetCenterPosition()) == TileType::WIN_CRYSTAL) {
             if (GetSceneManager() != nullptr) {
+                GetSceneManager()->SetRunStats(death_count, elapsed_time_seconds);
                 GetSceneManager()->SwitchScene(2);
             }
             return;

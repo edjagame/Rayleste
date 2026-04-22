@@ -352,6 +352,7 @@ void PlayerWallClimbing::Enter() {
 void PlayerDead::Enter() {
     player->respawn_timer = 0.0f;
     player->velocity = {0.0f, 0.0f};
+    (*player->death_counter)++; //spent 30 minutes on this bug
     player->PlayDeathSound();
     player->SetAnimation(Player::PlayerAnimationType::DEATH);
 }

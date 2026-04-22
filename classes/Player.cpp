@@ -630,6 +630,9 @@ void Player::TryConsumeDashRefill() {
     }
 
     has_dashed = false;
+    wall_grab_timer = 0.0f;
+    wall_jump_cooldown_timer = 0.0f;
+    can_wall_grab = true;
     GetGrid()->SetTileId(center, 0);
 }
 

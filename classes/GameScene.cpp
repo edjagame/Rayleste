@@ -18,6 +18,7 @@ GameScene::GameScene()
 void GameScene::Begin() {
     // Init Settings
     settings = LoadSettings(SETTINGS_FILEPATH);
+    LoadSave(SAVE_FILEPATH, settings);
     
     // Load sounds and music via shared resource manager
     sound_jump = ResourceManager::GetInstance()->GetSound(settings.sounds.jump);
@@ -34,8 +35,31 @@ void GameScene::Begin() {
                         settings.tilemap.tile_size_sprite_sheet, 
                         settings.tilemap.tile_size_grid, 
                         settings.tilemap.screens);
+    
+        
+    Vector2 spawn;
+    if (GetSceneManager()->use_saved_checkpoint) {
+        bool save_valid = false;
+        for(Screen& screen : grid.screens) {
+            float epsilon = 0.01f; 
+            if (fabs(screen.checkpoint_position.x - settings.checkpoint_save_data.x) < epsilon &&
+                fabs(screen.checkpoint_position.y - settings.checkpoint_save_data.y) < epsilon) {
+                spawn = screen.checkpoint_position;
+                save_valid = true;
+                break;
+            }
+        }
+        if (!save_valid) {
+            std::cerr << "Saved checkpoint is invalid. Starting at default spawn point." << std::endl;
+            std::cout << "Saved checkpoint: (" << settings.checkpoint_save_data.x << ", " << settings.checkpoint_save_data.y << ")" << std::endl;
+            spawn = grid.GetScreenCheckpoint(0);
+        }
+    }
+    else {
+        spawn = grid.GetScreenCheckpoint(0);
+    }
 
-    const Vector2 spawn = settings.tilemap.screens[0].checkpoint_position;
+
     player.position = spawn;
     player.velocity = {0.0f, 0.0f};
     player.acceleration = {0.0f, 0.0f};
@@ -62,7 +86,7 @@ void GameScene::Begin() {
         settings.player_animations.dash,
         settings.player_animations.death
     )) {
-        std::cerr << "Player animations failed to load. Using fallback rectangle." << std::endl;
+        std::cerr << "Player animations failed to load." << std::endl;
     }
     
     player.sound_jump = &sound_jump;
@@ -117,6 +141,9 @@ void GameScene::Begin() {
 void GameScene::End() {
     player.UnloadAnimations();
     StopMusicStream(music_bgm);
+
+    settings.checkpoint_save_data = player.current_respawn_point;
+    SaveSettings(settings, SAVE_FILEPATH);
 }
 
 void GameScene::Update() {

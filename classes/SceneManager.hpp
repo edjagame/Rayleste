@@ -58,6 +58,8 @@ class SceneManager {
     RunStats run_stats;
 
 public:
+    bool use_saved_checkpoint = false;
+    
     // Adds the specified scene to the scene manager, and assigns it
     // to the specified scene ID
     void RegisterScene(Scene* scene, int scene_id) {

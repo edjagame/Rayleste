@@ -36,11 +36,13 @@ void TitleScene::Draw() {
     DrawTexture(rayleste_bg, 0, 0 , WHITE);
     if(uiLibrary.Button(0, "NEW GAME", {100, 325, 300, 50})) {
         if (GetSceneManager() != nullptr) {
+            GetSceneManager()->use_saved_checkpoint = false;
             GetSceneManager()->SwitchScene(1);
         }   
     }
     if(uiLibrary.Button(1, "CONTINUE GAME", {100, 375, 300, 50})) {
         if (GetSceneManager() != nullptr) {
+            GetSceneManager()->use_saved_checkpoint = true;
             GetSceneManager()->SwitchScene(1);
         }
     }

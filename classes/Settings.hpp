@@ -52,6 +52,9 @@ struct Settings {
     SoundSettings sounds;
     PlayerAnimationSettings player_animations;
     TextureSettings textures;
+    Vector2 checkpoint_save_data;
 };
 
 Settings LoadSettings(const std::string& filepath = "settings.json");
+void LoadSave(const std::string& filepath, Settings& settings);
+void SaveSettings(const Settings& settings, const std::string& filepath = "settings.json");

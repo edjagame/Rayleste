@@ -156,5 +156,32 @@ Settings LoadSettings(const std::string& filepath) {
         if (json_textures.contains("background")) settings.textures.background = json_textures["background"].get<std::string>();
     }
 
+    
+
     return settings;
+}
+
+void LoadSave(const std::string& filepath, Settings& settings) {
+    std::ifstream file(filepath);
+    json json_root;
+    file >> json_root;
+
+    if (json_root.contains("player_state")) {
+        json json_player_state = json_root["player_state"];
+        if (json_player_state.contains("x") && json_player_state.contains("y")) {
+            settings.checkpoint_save_data = LoadVector2(json_player_state);
+        }
+    }
+    
+    file.close();
+}
+void SaveSettings(const Settings& settings, const std::string& filepath) {
+    json json_root;
+    
+    json_root["player_state"]["x"] = settings.checkpoint_save_data.x;
+    json_root["player_state"]["y"] = settings.checkpoint_save_data.y;
+
+    std::ofstream file(filepath);
+    file << json_root.dump(4);
+    file.close();
 }

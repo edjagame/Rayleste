@@ -11,6 +11,7 @@ const Vector2 SCREEN_CENTER = {WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f};
 const float SCREEN_TRANSITION_DURATION = 0.5f;
 
 const std::string SETTINGS_FILEPATH = "settings.ini";
+const std::string SAVE_FILEPATH = "save.dat";
 
 const float PLAYER_WIDTH = 40.0f;
 const float PLAYER_HEIGHT = 80.0f;

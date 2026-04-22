@@ -124,6 +124,14 @@ void GameScene::Update() {
     float deltaTime = GetFrameTime();
     // ========== GAME UPDATE ==========
 
+    // Return to title scene
+    if (IsKeyPressed(KEY_BACKSPACE)) {
+        if (GetSceneManager() != nullptr) {
+            GetSceneManager()->SwitchScene(0);
+        }
+        return;
+    }
+
     // Update background music
     UpdateMusicStream(music_bgm);
     elapsed_time_seconds += deltaTime;

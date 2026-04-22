@@ -1,18 +1,3 @@
-/*
-|------------------------------------------------------|
-|                 PLAYER STATE MACHINE                 |              
-|------------------------------------------------------|
-|   This is the file that contains definitions for     |
-|   all the functions declared in the Player.hpp       |
-|   file.                                              |
-|                                                      |
-|   All functions from the Player.hpp SHOULD be        |
-|   defined here (For Now)                             |
-|                                                      |
-|------------------------------------------------------|
-*/
-
-
 #include <raylib.h>
 #include <raymath.h>
 #include <iostream>
@@ -25,8 +10,6 @@ const Color DASHLESS_COLOR = {200, 0, 0, 255};
 const Color DEAD_COLOR = {0, 0, 0, 255};
 
 static void DrawPlayerStatusBar(const Player& player);
-
-
 
 /**************************************************
  *            GLOBAL PLAYER FUNCTIONS             *
@@ -607,9 +590,7 @@ void PlayerWallClimbing::Update(float delta_time) {
 void PlayerDead::Update(float delta_time) {
     player->respawn_timer += delta_time;
     if (player->respawn_timer >= player->respawn_time) { 
-        if (player->GetGrid() != nullptr) {
-            player->GetGrid()->ResetTiles();
-        }
+        player->GetGrid()->ResetTiles();
         player->position = player->current_respawn_point;
         player->velocity = {0.0f, 0.0f};
         player->SetState(&player->airborne);

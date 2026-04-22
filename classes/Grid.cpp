@@ -105,9 +105,9 @@ void Grid::ResetTiles() {
     const int screen_count = screens.size();
     const int initial_screen_count = initial_screens.size();
 
-    for (int screen_index = 0; screen_index < screen_count && screen_index < initial_screen_count; screen_index++) {
+    for (int screen_index = 0; screen_index < screen_count; screen_index++) {
         Screen& current_screen = screens[screen_index];
-        const Screen& initial_screen = initial_screens[screen_index];
+        Screen& initial_screen = initial_screens[screen_index];
         current_screen.tile_data = initial_screen.tile_data;
     }
 }
